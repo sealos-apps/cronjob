@@ -1,10 +1,10 @@
 {{/* Expand the name of the chart. */}}
-{{- define "cronjob-frontend.name" -}}
+{{- define "cronjob.name" -}}
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/* Create a default fully qualified app name. */}}
-{{- define "cronjob-frontend.fullname" -}}
+{{- define "cronjob.fullname" -}}
 {{- if .Values.fullnameOverride }}
 {{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
 {{- else }}
@@ -17,35 +17,35 @@
 {{- end }}
 {{- end }}
 
-{{- define "cronjob-frontend.chart" -}}
+{{- define "cronjob.chart" -}}
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
-{{- define "cronjob-frontend.labels" -}}
-helm.sh/chart: {{ include "cronjob-frontend.chart" . }}
-{{ include "cronjob-frontend.selectorLabels" . }}
-{{ include "cronjob-frontend.recommendedLabels" . }}
+{{- define "cronjob.labels" -}}
+helm.sh/chart: {{ include "cronjob.chart" . }}
+{{ include "cronjob.selectorLabels" . }}
+{{ include "cronjob.recommendedLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end }}
 
-{{- define "cronjob-frontend.selectorLabels" -}}
-app: {{ include "cronjob-frontend.fullname" . }}
+{{- define "cronjob.selectorLabels" -}}
+app: {{ include "cronjob.fullname" . }}
 {{- end }}
 
-{{- define "cronjob-frontend.recommendedLabels" -}}
-app.kubernetes.io/name: {{ include "cronjob-frontend.name" . }}
+{{- define "cronjob.recommendedLabels" -}}
+app.kubernetes.io/name: {{ include "cronjob.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
-{{- define "cronjob-frontend.scheme" -}}
+{{- define "cronjob.scheme" -}}
 {{- if eq (toString .Values.cronjobConfig.disableHttps) "true" -}}http{{- else -}}https{{- end -}}
 {{- end }}
 
-{{- define "cronjob-frontend.port" -}}
-{{- $scheme := include "cronjob-frontend.scheme" . -}}
+{{- define "cronjob.port" -}}
+{{- $scheme := include "cronjob.scheme" . -}}
 {{- $port := toString .Values.cronjobConfig.cloudPort -}}
 {{- if eq $scheme "http" -}}
 {{- $port = toString .Values.cronjobConfig.httpPort -}}
@@ -57,28 +57,28 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 {{- end }}
 
-{{- define "cronjob-frontend.portSuffix" -}}
-{{- $port := include "cronjob-frontend.port" . -}}
+{{- define "cronjob.portSuffix" -}}
+{{- $port := include "cronjob.port" . -}}
 {{- if $port -}}:{{ $port }}{{- end -}}
 {{- end }}
 
-{{- define "cronjob-frontend.portEnv" -}}
-{{- $port := include "cronjob-frontend.port" . -}}
+{{- define "cronjob.portEnv" -}}
+{{- $port := include "cronjob.port" . -}}
 {{- if $port -}}:{{ $port }}{{- end -}}
 {{- end }}
 
-{{- define "cronjob-frontend.cloudOrigin" -}}
-{{- include "cronjob-frontend.scheme" . -}}://{{ .Values.cronjobConfig.cloudDomain }}{{ include "cronjob-frontend.portSuffix" . }}
+{{- define "cronjob.cloudOrigin" -}}
+{{- include "cronjob.scheme" . -}}://{{ .Values.cronjobConfig.cloudDomain }}{{ include "cronjob.portSuffix" . }}
 {{- end }}
 
-{{- define "cronjob-frontend.wildcardCloudOrigin" -}}
-{{- include "cronjob-frontend.scheme" . -}}://*.{{ .Values.cronjobConfig.cloudDomain }}{{ include "cronjob-frontend.portSuffix" . }}
+{{- define "cronjob.wildcardCloudOrigin" -}}
+{{- include "cronjob.scheme" . -}}://*.{{ .Values.cronjobConfig.cloudDomain }}{{ include "cronjob.portSuffix" . }}
 {{- end }}
 
-{{- define "cronjob-frontend.host" -}}
+{{- define "cronjob.host" -}}
 {{- default (printf "cronjob.%s" .Values.cronjobConfig.cloudDomain) .Values.ingress.host -}}
 {{- end }}
 
-{{- define "cronjob-frontend.appUrl" -}}
-{{- include "cronjob-frontend.scheme" . -}}://{{ include "cronjob-frontend.host" . }}{{ include "cronjob-frontend.portSuffix" . }}
+{{- define "cronjob.appUrl" -}}
+{{- include "cronjob.scheme" . -}}://{{ include "cronjob.host" . }}{{ include "cronjob.portSuffix" . }}
 {{- end }}

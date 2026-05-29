@@ -24,7 +24,15 @@ case "${arch}" in
 esac
 
 cd "${tmp_dir}"
-until curl -sSfLo sealos.tar.gz "https://github.com/labring/sealos/releases/download/v5.1.2-rc5/sealos_5.1.2-rc5_linux_${sealos_arch}.tar.gz"; do
+SEALOS_VERSION="${SEALOS_VERSION:-5.1.1}"
+SEALOS_TAG="${SEALOS_VERSION}"
+case "${SEALOS_TAG}" in
+  v*) ;;
+  *) SEALOS_TAG="v${SEALOS_TAG}" ;;
+esac
+SEALOS_ARCHIVE_VERSION="${SEALOS_TAG#v}"
+
+until curl -sSfLo sealos.tar.gz "https://github.com/labring/sealos/releases/download/${SEALOS_TAG}/sealos_${SEALOS_ARCHIVE_VERSION}_linux_${sealos_arch}.tar.gz"; do
   sleep 3
 done
 

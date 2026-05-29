@@ -1,5 +1,5 @@
-# Custom values for cronjob-frontend helm chart.
-# This file contains user-customizable configurations.
+# Custom values for cronjob helm chart.
+# This file only contains fields users commonly tune.
 
 replicaCount: 1
 

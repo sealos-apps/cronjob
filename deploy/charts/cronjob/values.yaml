@@ -1,10 +1,10 @@
-# Default values for cronjob-frontend helm chart.
+# Default values for cronjob helm chart.
 
 image: ghcr.io/sealos-apps/cronjob/cronjob:latest
 imagePullPolicy: Always
 
 imagePullSecrets: []
-fullnameOverride: "cronjob-frontend"
+fullnameOverride: "cronjob"
 
 replicaCount: 1
 
@@ -81,5 +81,5 @@ affinity:
               - key: "app"
                 operator: In
                 values:
-                  - cronjob-frontend
+                  - cronjob
           topologyKey: "kubernetes.io/hostname"

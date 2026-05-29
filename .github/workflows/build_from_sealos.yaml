@@ -7,13 +7,20 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Build version, supports sha-xxx or v5.xxx.'
+        description: 'Build version, supports sha-* or v*; empty uses current commit sha.'
         required: false
         type: string
+
+permissions:
+  contents: read
 
 env:
   GHCR_RUNTIME_IMAGE: ghcr.io/${{ github.repository }}/cronjob
   GHCR_SEALOS_IMAGE: ghcr.io/${{ github.repository }}/cronjob-cluster
+
+concurrency:
+  group: build-sealos-from-sealos-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   meta:
@@ -35,7 +42,7 @@ jobs:
 
           RAW_VERSION="${{ github.event.inputs.version || '' }}"
           if [[ -z "$(echo "${RAW_VERSION}" | xargs)" ]]; then
-            RAW_VERSION="sha-${GITHUB_SHA:0:7}"
+            RAW_VERSION="sha-$(echo "${GITHUB_SHA}" | cut -c1-7)"
           fi
 
           TAG_NAME="$(echo "${RAW_VERSION}" | xargs)"
@@ -111,7 +118,12 @@ jobs:
           platforms: ${{ matrix.platform }}
           tags: |
             ${{ env.GHCR_RUNTIME_IMAGE }}:${{ needs.meta.outputs.image_tag }}-${{ matrix.arch }}
-          labels: runnumber=${{ github.run_id }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ needs.meta.outputs.image_tag }}
+            org.opencontainers.image.architecture=${{ matrix.arch }}
+            runnumber=${{ github.run_id }}
 
   runtime-manifest:
     name: Publish Runtime Manifests
@@ -191,8 +203,8 @@ jobs:
           RUNTIME_IMAGE="${GHCR_RUNTIME_IMAGE}:${IMAGE_TAG}"
 
           sudo sealos login -u "${{ github.actor }}" -p "${{ secrets.GITHUB_TOKEN }}" ghcr.io
-          sed -i -E "s#^image:.*#image: ${RUNTIME_IMAGE}#g" charts/cronjob-frontend/values.yaml
-          sudo sealos registry save --registry-dir=registry --arch ${{ matrix.arch }} .
+          sed -i -E "s#^image:.*#image: ${RUNTIME_IMAGE}#g" charts/cronjob/values.yaml
+          sudo sealos registry save --registry-dir=registry_${{ matrix.arch }} --arch ${{ matrix.arch }} .
 
       - name: Build and push sealos image
         uses: docker/build-push-action@v6
@@ -200,12 +212,19 @@ jobs:
           context: ./deploy
           file: ./deploy/Kubefile
           push: true
+          build-args: |
+            TARGETARCH=${{ matrix.arch }}
           cache-from: type=gha,scope=sealos-${{ matrix.arch }}
           cache-to: type=gha,mode=max,scope=sealos-${{ matrix.arch }}
           platforms: ${{ matrix.platform }}
           tags: |
             ${{ env.GHCR_SEALOS_IMAGE }}:${{ needs.meta.outputs.image_tag }}-${{ matrix.arch }}
-          labels: runnumber=${{ github.run_id }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ needs.meta.outputs.image_tag }}
+            org.opencontainers.image.architecture=${{ matrix.arch }}
+            runnumber=${{ github.run_id }}
 
       - name: Save sealos image package
         run: |
@@ -214,17 +233,13 @@ jobs:
           docker pull "${GHCR_SEALOS_IMAGE}:${IMAGE_TAG}-${{ matrix.arch }}"
           mkdir -p release-assets
           docker save "${GHCR_SEALOS_IMAGE}:${IMAGE_TAG}-${{ matrix.arch }}" | gzip > "release-assets/cronjob-cluster-${IMAGE_TAG}-${{ matrix.arch }}.tar.gz"
-          md5sum "release-assets/cronjob-cluster-${IMAGE_TAG}-${{ matrix.arch }}.tar.gz" > "release-assets/cronjob-cluster-${IMAGE_TAG}-${{ matrix.arch }}.tar.gz.md5"
-          ls -lh release-assets
-          docker image inspect "${GHCR_SEALOS_IMAGE}:${IMAGE_TAG}-${{ matrix.arch }}" --format '{{json .RepoTags}} {{.Id}} {{.Size}}'
+          ls -lh "release-assets/cronjob-cluster-${IMAGE_TAG}-${{ matrix.arch }}.tar.gz"
 
       - name: Upload sealos image package
         uses: actions/upload-artifact@v4
         with:
           name: sealos-image-${{ needs.meta.outputs.image_tag }}-${{ matrix.arch }}
-          path: |
-            release-assets/cronjob-cluster-${{ needs.meta.outputs.image_tag }}-${{ matrix.arch }}.tar.gz
-            release-assets/cronjob-cluster-${{ needs.meta.outputs.image_tag }}-${{ matrix.arch }}.tar.gz.md5
+          path: release-assets/cronjob-cluster-${{ needs.meta.outputs.image_tag }}-${{ matrix.arch }}.tar.gz
           if-no-files-found: error
           retention-days: 14
 
@@ -253,6 +268,7 @@ jobs:
             -t "${GHCR_SEALOS_IMAGE}:${IMAGE_TAG}" \
             "${GHCR_SEALOS_IMAGE}:${IMAGE_TAG}-amd64" \
             "${GHCR_SEALOS_IMAGE}:${IMAGE_TAG}-arm64"
+          docker buildx imagetools inspect "${GHCR_SEALOS_IMAGE}:${IMAGE_TAG}"
 
       - name: Update latest tag
         if: ${{ needs.meta.outputs.is_release == 'true' }}
@@ -265,10 +281,9 @@ jobs:
             "${GHCR_SEALOS_IMAGE}:${IMAGE_TAG}-arm64"
 
   sync-image-aliyun:
-    name: Sync Sealos Packages to OSS
+    name: Sync Sealos Packages to OSS (${{ matrix.arch }})
     runs-on: ubuntu-latest
     needs: [meta, sealos-manifest]
-    if: ${{ vars.OSS_BUCKET != '' }}
     permissions:
       contents: read
     strategy:
@@ -276,19 +291,20 @@ jobs:
       matrix:
         arch: [amd64, arm64]
     steps:
-      - name: Check OSS credentials
+      - name: Check OSS config
         id: oss-credentials
         env:
+          OSS_BUCKET: ${{ vars.OSS_BUCKET }}
           OSS_ENDPOINT: ${{ secrets.OSS_ENDPOINT }}
           OSS_ACCESS_KEY_ID: ${{ secrets.OSS_ACCESS_KEY_ID }}
           OSS_ACCESS_KEY_SECRET: ${{ secrets.OSS_ACCESS_KEY_SECRET }}
         run: |
           set -euo pipefail
-          if [[ -n "${OSS_ENDPOINT}" && -n "${OSS_ACCESS_KEY_ID}" && -n "${OSS_ACCESS_KEY_SECRET}" ]]; then
+          if [[ -n "${OSS_BUCKET}" && -n "${OSS_ENDPOINT}" && -n "${OSS_ACCESS_KEY_ID}" && -n "${OSS_ACCESS_KEY_SECRET}" ]]; then
             echo "enabled=true" >> "${GITHUB_OUTPUT}"
           else
             echo "enabled=false" >> "${GITHUB_OUTPUT}"
-            echo "OSS credentials are not configured; skipping package sync."
+            echo "OSS bucket or credentials are not configured; skipping package sync."
           fi
 
       - name: Download sealos package
@@ -311,12 +327,11 @@ jobs:
         run: |
           set -euo pipefail
           TAR_NAME="release-assets/cronjob-cluster-${{ needs.meta.outputs.image_tag }}-${{ matrix.arch }}.tar.gz"
-          MD5_NAME="${TAR_NAME}.md5"
           OSS_PREFIX="${{ needs.meta.outputs.oss_prefix }}"
           OSS_TAR_NAME="cronjob-cluster-${{ needs.meta.outputs.oss_tag }}-${{ matrix.arch }}.tar.gz"
 
           test -s "${TAR_NAME}"
-          test -s "${MD5_NAME}"
+          md5sum "${TAR_NAME}" > "${TAR_NAME}.md5"
           ls -lh release-assets
           ossutil64 cp -f -e "${{ secrets.OSS_ENDPOINT }}" \
             -i "${{ secrets.OSS_ACCESS_KEY_ID }}" \
@@ -326,5 +341,5 @@ jobs:
           ossutil64 cp -f -e "${{ secrets.OSS_ENDPOINT }}" \
             -i "${{ secrets.OSS_ACCESS_KEY_ID }}" \
             -k "${{ secrets.OSS_ACCESS_KEY_SECRET }}" \
-            "${MD5_NAME}" \
+            "${TAR_NAME}.md5" \
             "oss://${{ vars.OSS_BUCKET }}/${OSS_PREFIX}/${OSS_TAR_NAME}.md5"

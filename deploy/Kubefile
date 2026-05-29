@@ -1,9 +1,10 @@
 FROM scratch
+ARG TARGETARCH
 
 USER 65532:65532
 
-COPY registry registry
+COPY registry_${TARGETARCH} registry
 COPY charts charts
-COPY cronjob-frontend-entrypoint.sh cronjob-frontend-entrypoint.sh
+COPY cronjob-entrypoint.sh cronjob-entrypoint.sh
 
-CMD ["bash cronjob-frontend-entrypoint.sh"]
+CMD ["bash cronjob-entrypoint.sh"]
