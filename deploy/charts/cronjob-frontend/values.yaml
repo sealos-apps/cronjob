@@ -38,6 +38,7 @@ cronjobConfig:
   httpPort: ""
   disableHttps: false
   certSecretName: "wildcard-cert"
+  tlsRejectUnauthorized: "1"
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 3
   podCpuMilliCores: 50
@@ -50,6 +51,25 @@ resources:
   requests:
     cpu: 10m
     memory: 128Mi
+
+readinessProbe:
+  httpGet:
+    path: /api/health
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 3
+  timeoutSeconds: 2
+  successThreshold: 2
+  failureThreshold: 3
+
+livenessProbe:
+  httpGet:
+    path: /api/health
+    port: http
+  initialDelaySeconds: 15
+  periodSeconds: 10
+  timeoutSeconds: 2
+  failureThreshold: 3
 
 affinity:
   podAntiAffinity:

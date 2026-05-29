@@ -214,12 +214,17 @@ jobs:
           docker pull "${GHCR_SEALOS_IMAGE}:${IMAGE_TAG}-${{ matrix.arch }}"
           mkdir -p release-assets
           docker save "${GHCR_SEALOS_IMAGE}:${IMAGE_TAG}-${{ matrix.arch }}" | gzip > "release-assets/cronjob-cluster-${IMAGE_TAG}-${{ matrix.arch }}.tar.gz"
+          md5sum "release-assets/cronjob-cluster-${IMAGE_TAG}-${{ matrix.arch }}.tar.gz" > "release-assets/cronjob-cluster-${IMAGE_TAG}-${{ matrix.arch }}.tar.gz.md5"
+          ls -lh release-assets
+          docker image inspect "${GHCR_SEALOS_IMAGE}:${IMAGE_TAG}-${{ matrix.arch }}" --format '{{json .RepoTags}} {{.Id}} {{.Size}}'
 
       - name: Upload sealos image package
         uses: actions/upload-artifact@v4
         with:
           name: sealos-image-${{ needs.meta.outputs.image_tag }}-${{ matrix.arch }}
-          path: release-assets/cronjob-cluster-${{ needs.meta.outputs.image_tag }}-${{ matrix.arch }}.tar.gz
+          path: |
+            release-assets/cronjob-cluster-${{ needs.meta.outputs.image_tag }}-${{ matrix.arch }}.tar.gz
+            release-assets/cronjob-cluster-${{ needs.meta.outputs.image_tag }}-${{ matrix.arch }}.tar.gz.md5
           if-no-files-found: error
           retention-days: 14
 
@@ -258,3 +263,68 @@ jobs:
             -t "${GHCR_SEALOS_IMAGE}:latest" \
             "${GHCR_SEALOS_IMAGE}:${IMAGE_TAG}-amd64" \
             "${GHCR_SEALOS_IMAGE}:${IMAGE_TAG}-arm64"
+
+  sync-image-aliyun:
+    name: Sync Sealos Packages to OSS
+    runs-on: ubuntu-latest
+    needs: [meta, sealos-manifest]
+    if: ${{ vars.OSS_BUCKET != '' }}
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [amd64, arm64]
+    steps:
+      - name: Check OSS credentials
+        id: oss-credentials
+        env:
+          OSS_ENDPOINT: ${{ secrets.OSS_ENDPOINT }}
+          OSS_ACCESS_KEY_ID: ${{ secrets.OSS_ACCESS_KEY_ID }}
+          OSS_ACCESS_KEY_SECRET: ${{ secrets.OSS_ACCESS_KEY_SECRET }}
+        run: |
+          set -euo pipefail
+          if [[ -n "${OSS_ENDPOINT}" && -n "${OSS_ACCESS_KEY_ID}" && -n "${OSS_ACCESS_KEY_SECRET}" ]]; then
+            echo "enabled=true" >> "${GITHUB_OUTPUT}"
+          else
+            echo "enabled=false" >> "${GITHUB_OUTPUT}"
+            echo "OSS credentials are not configured; skipping package sync."
+          fi
+
+      - name: Download sealos package
+        if: ${{ steps.oss-credentials.outputs.enabled == 'true' }}
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          pattern: sealos-image-${{ needs.meta.outputs.image_tag }}-${{ matrix.arch }}
+          merge-multiple: true
+
+      - name: Install oss tools
+        if: ${{ steps.oss-credentials.outputs.enabled == 'true' }}
+        run: |
+          set -euo pipefail
+          sudo -v
+          curl -fsSL https://gosspublic.alicdn.com/ossutil/install.sh | sudo bash
+
+      - name: Sync to OSS
+        if: ${{ steps.oss-credentials.outputs.enabled == 'true' }}
+        run: |
+          set -euo pipefail
+          TAR_NAME="release-assets/cronjob-cluster-${{ needs.meta.outputs.image_tag }}-${{ matrix.arch }}.tar.gz"
+          MD5_NAME="${TAR_NAME}.md5"
+          OSS_PREFIX="${{ needs.meta.outputs.oss_prefix }}"
+          OSS_TAR_NAME="cronjob-cluster-${{ needs.meta.outputs.oss_tag }}-${{ matrix.arch }}.tar.gz"
+
+          test -s "${TAR_NAME}"
+          test -s "${MD5_NAME}"
+          ls -lh release-assets
+          ossutil64 cp -f -e "${{ secrets.OSS_ENDPOINT }}" \
+            -i "${{ secrets.OSS_ACCESS_KEY_ID }}" \
+            -k "${{ secrets.OSS_ACCESS_KEY_SECRET }}" \
+            "${TAR_NAME}" \
+            "oss://${{ vars.OSS_BUCKET }}/${OSS_PREFIX}/${OSS_TAR_NAME}"
+          ossutil64 cp -f -e "${{ secrets.OSS_ENDPOINT }}" \
+            -i "${{ secrets.OSS_ACCESS_KEY_ID }}" \
+            -k "${{ secrets.OSS_ACCESS_KEY_SECRET }}" \
+            "${MD5_NAME}" \
+            "oss://${{ vars.OSS_BUCKET }}/${OSS_PREFIX}/${OSS_TAR_NAME}.md5"

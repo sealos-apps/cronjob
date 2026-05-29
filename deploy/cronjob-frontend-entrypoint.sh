@@ -33,6 +33,7 @@ SEALOS_DISABLE_HTTPS=${SEALOS_DISABLE_HTTPS:-"${disableHttps:-$(get_cm_value sea
 add_set_string cronjobConfig.disableHttps "${SEALOS_DISABLE_HTTPS}"
 SEALOS_CERT_SECRET_NAME=${SEALOS_CERT_SECRET_NAME:-"${certSecretName:-$(get_cm_value sealos-system sealos-config certSecretName)}"}
 add_set_string cronjobConfig.certSecretName "${SEALOS_CERT_SECRET_NAME}"
+add_set_string cronjobConfig.tlsRejectUnauthorized "${tlsRejectUnauthorized:-}"
 add_set_string cronjobConfig.successfulJobsHistoryLimit "${successfulJobsHistoryLimit:-}"
 add_set_string cronjobConfig.failedJobsHistoryLimit "${failedJobsHistoryLimit:-}"
 add_set_string cronjobConfig.podCpuMilliCores "${podCpuMilliCores:-}"

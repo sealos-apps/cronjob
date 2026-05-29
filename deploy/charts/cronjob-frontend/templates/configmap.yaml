@@ -13,7 +13,7 @@ data:
     cronjob:
       components:
         applaunchpad:
-          url: {{ printf "https://applaunchpad.%s%s" .Values.cronjobConfig.cloudDomain (include "cronjob-frontend.portSuffix" .) | quote }}
+          url: {{ printf "%s://applaunchpad.%s%s" (include "cronjob-frontend.scheme" .) .Values.cronjobConfig.cloudDomain (include "cronjob-frontend.portSuffix" .) | quote }}
       podResources:
         cpuMilliCores: {{ .Values.cronjobConfig.podCpuMilliCores }}
         memoryMiB: {{ .Values.cronjobConfig.podMemoryMiB }}
