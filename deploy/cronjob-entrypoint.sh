@@ -38,6 +38,19 @@ normalize_user_values_header() {
     -e 's/This file contains user-customizable configurations./This file only contains fields users commonly tune./g' \
     "${file}"
 }
+read_cert_tls_reject_unauthorized() {
+    local cert_mode
+
+    cert_mode="$(kubectl get configmap cert-config -n sealos-system -o jsonpath='{.data.CERT_MODE}' 2>/dev/null || true)"
+    cert_mode="${CERT_MODE:-${cert_mode:-self-signed}}"
+    cert_mode="$(printf '%s' "${cert_mode}" | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')"
+
+    case "${cert_mode}" in
+        https|acme|acmedns) printf '0' ;;
+        *) printf '1' ;;
+    esac
+}
+
 
 SEALOS_CLOUD_DOMAIN=${SEALOS_CLOUD_DOMAIN:-"${cloudDomain:-$(get_cm_value sealos-system sealos-config cloudDomain)}"}
 add_set_string cronjobConfig.cloudDomain "${SEALOS_CLOUD_DOMAIN}"
@@ -49,11 +62,8 @@ SEALOS_DISABLE_HTTPS=${SEALOS_DISABLE_HTTPS:-"${disableHttps:-$(get_cm_value sea
 add_set_string cronjobConfig.disableHttps "${SEALOS_DISABLE_HTTPS}"
 SEALOS_CERT_SECRET_NAME=${SEALOS_CERT_SECRET_NAME:-"${certSecretName:-$(get_cm_value sealos-system sealos-config certSecretName)}"}
 add_set_string cronjobConfig.certSecretName "${SEALOS_CERT_SECRET_NAME}"
+tlsRejectUnauthorized="$(read_cert_tls_reject_unauthorized)"
 add_set_string cronjobConfig.tlsRejectUnauthorized "${tlsRejectUnauthorized:-}"
-add_set_string cronjobConfig.successfulJobsHistoryLimit "${successfulJobsHistoryLimit:-}"
-add_set_string cronjobConfig.failedJobsHistoryLimit "${failedJobsHistoryLimit:-}"
-add_set_string cronjobConfig.podCpuMilliCores "${podCpuMilliCores:-}"
-add_set_string cronjobConfig.podMemoryMiB "${podMemoryMiB:-}"
 
 adopt_namespaced_resource() {
   local namespace="$1"
