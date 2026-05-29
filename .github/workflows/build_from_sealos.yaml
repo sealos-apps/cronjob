@@ -202,9 +202,17 @@ jobs:
           IMAGE_TAG="${{ needs.meta.outputs.image_tag }}"
           RUNTIME_IMAGE="${GHCR_RUNTIME_IMAGE}:${IMAGE_TAG}"
 
-          sudo sealos login -u "${{ github.actor }}" -p "${{ secrets.GITHUB_TOKEN }}" ghcr.io
           sed -i -E "s#^image:.*#image: ${RUNTIME_IMAGE}#g" charts/cronjob/values.yaml
-          sudo sealos registry save --registry-dir=registry_${{ matrix.arch }} --arch ${{ matrix.arch }} .
+          if [ -s images/shim/imagelist ]; then
+            mapfile -t SHIM_IMAGES < <(sed -e 's/[[:space:]]*#.*$//' -e '/^[[:space:]]*$/d' images/shim/imagelist)
+            if [ "${#SHIM_IMAGES[@]}" -gt 0 ]; then
+              SHIM_IMAGE_LIST="$(IFS=,; echo "${SHIM_IMAGES[*]}")"
+              sudo sealos registry save --registry-dir=registry_${{ matrix.arch }} --arch ${{ matrix.arch }} --images="${SHIM_IMAGE_LIST}"
+            fi
+          fi
+
+          sudo sealos login -u "${{ github.actor }}" -p "${{ secrets.GITHUB_TOKEN }}" ghcr.io
+          sudo sealos registry save --registry-dir=registry_${{ matrix.arch }} --arch ${{ matrix.arch }} --images="${RUNTIME_IMAGE}"
 
       - name: Build and push sealos image
         uses: docker/build-push-action@v6
