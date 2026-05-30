@@ -1,9 +1,0 @@
-=== before cleanup ===
-sealos.hub:5000/labring/sealos-cronjob-frontend                  v5.1.2-rc5                                                    3d5d91eac0484       <IMAGE_SIZE>
-sealos.hub:5000/sealos-apps/cronjob/cronjob                      sha-3aa827c                                                   98f87a5f56af0       <IMAGE_SIZE>
-sealos.hub:5000/sealos-apps/cronjob/cronjob                      sha-99799cd                                                   2bef8830cd006       <IMAGE_SIZE>
-=== remove unused legacy images ===
-Deleted: sealos.hub:5000/labring/sealos-cronjob-frontend:v5.1.2-rc5
-Deleted: sealos.hub:5000/sealos-apps/cronjob/cronjob:sha-99799cd
-=== after cleanup ===
-sealos.hub:5000/sealos-apps/cronjob/cronjob                      sha-3aa827c                                                   98f87a5f56af0       <IMAGE_SIZE>

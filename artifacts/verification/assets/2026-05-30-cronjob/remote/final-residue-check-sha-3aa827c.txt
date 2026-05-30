@@ -1,4 +1,0 @@
-=== old namespace ===
-=== old resources ===
-=== old helm ===
-=== old values ===

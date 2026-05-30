@@ -1,5 +1,0 @@
-=== nodes ===
-NAME      STATUS   ROLES           AGE   VERSION    INTERNAL-IP      EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION       CONTAINER-RUNTIME
-<TEST_NODE>   Ready    control-plane   79m   v1.28.15   <CLUSTER_IP>   <none>        Ubuntu 22.04.3 LTS   5.15.0-179-generic   containerd://1.7.27-labring.1
-=== non running pods ===
-=== non ready deployments ===

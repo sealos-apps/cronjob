@@ -42,3 +42,5 @@ yalc.lock
 
 data/*
 !data/config.example.yaml
+
+/artifacts/
