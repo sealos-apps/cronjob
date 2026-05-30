@@ -1,0 +1,17 @@
+=== cronjobs ===
+NAME                 SCHEDULE      SUSPEND   ACTIVE   LAST SCHEDULE   AGE     CONTAINERS           IMAGES                               SELECTOR
+ui-smoke-<case-id>   */5 * * * *   False     0        2m47s           3m22s   ui-smoke-<case-id>   labring4docker/curl-kubectl:v1.0.0   <none>
+=== jobs all ===
+ui-smoke-<job-id>   1/1           15s        2m48s   ui-smoke-<case-id>   labring4docker/curl-kubectl:v1.0.0   batch.kubernetes.io/controller-uid=<UID>
+=== pods all ===
+ui-smoke-<job-id>-<pod-id>   0/1     Completed   0          2m48s   <POD_OR_SERVICE_IP>   <TEST_NODE>   <none>           <none>
+=== events ===
+2m47s       Normal   Scheduled          pod/ui-smoke-<job-id>-<pod-id>   Successfully assigned ns-admin/ui-smoke-<job-id>-<pod-id> to <TEST_NODE>
+2m48s       Normal   SuccessfulCreate   job/ui-smoke-<job-id>         Created pod: ui-smoke-<job-id>-<pod-id>
+2m48s       Normal   SuccessfulCreate   cronjob/ui-smoke-<case-id>              Created job ui-smoke-<job-id>
+2m46s       Normal   Pulling            pod/ui-smoke-<job-id>-<pod-id>   Pulling image "labring4docker/curl-kubectl:v1.0.0"
+2m39s       Normal   Pulled             pod/ui-smoke-<job-id>-<pod-id>   Successfully pulled image "labring4docker/curl-kubectl:v1.0.0" in 7.147s (7.147s including waiting)
+2m39s       Normal   Created            pod/ui-smoke-<job-id>-<pod-id>   Created container ui-smoke-<case-id>
+2m38s       Normal   Started            pod/ui-smoke-<job-id>-<pod-id>   Started container ui-smoke-<case-id>
+2m33s       Normal   Completed          job/ui-smoke-<job-id>         Job completed
+2m33s       Normal   SawCompletedJob    cronjob/ui-smoke-<case-id>              Saw completed job: ui-smoke-<job-id>, status: Complete

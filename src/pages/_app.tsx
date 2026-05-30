@@ -28,6 +28,7 @@ import {
   QuotaGuardProvider
 } from '@labring/sealos-shared-sdk';
 import { getClientAppConfigServer } from '@/pages/api/platform/getClientAppConfig';
+import { patchWorkspaceQuotaFallback } from '@/utils/quota';
 
 Router.events.on('routeChangeStart', () => NProgress.start());
 Router.events.on('routeChangeComplete', () => NProgress.done());
@@ -66,6 +67,7 @@ function AppContent({ Component, pageProps }: Pick<AppProps, 'Component' | 'page
 
   useEffect(() => {
     const response = createSealosApp();
+    patchWorkspaceQuotaFallback(sealosApp);
     (async () => {
       try {
         setSession(await sealosApp.getSession());

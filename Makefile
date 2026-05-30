@@ -21,7 +21,7 @@ help: ## Display this help.
 ##@ Build
 
 .PHONY: build
-build: ## Build desktop-frontend binary.
+build: ## Build cronjob frontend.
 	pnpm run build
 
 .PHONY: run
