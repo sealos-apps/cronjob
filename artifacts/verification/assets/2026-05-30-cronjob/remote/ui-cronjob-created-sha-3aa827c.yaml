@@ -1,0 +1,62 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: '{"apiVersion":"batch/v1","kind":"CronJob","metadata":{"name":"ui-smoke-<case-id>","annotations":{},"labels":{"cronjob-type":"image","cronjob-launchpad-name":"","cloud.sealos.io/cronjob":"ui-smoke-<case-id>"},"namespace":"ns-admin"},"spec":{"schedule":"*/5
+      * * * *","concurrencyPolicy":"Replace","startingDeadlineSeconds":60,"successfulJobsHistoryLimit":3,"failedJobsHistoryLimit":3,"timeZone":"Asia/Shanghai","jobTemplate":{"activeDeadlineSeconds":600,"spec":{"template":{"spec":{"serviceAccountName":"default","automountServiceAccountToken":false,"containers":[{"name":"ui-smoke-<case-id>","image":"labring4docker/curl-kubectl:v1.0.0","env":[],"command":["/bin/sh","-c"],"args":["echo
+      ui-smoke-from-page"],"imagePullPolicy":"IfNotPresent"}],"restartPolicy":"OnFailure"}}}}}}'
+  creationTimestamp: "2026-05-29T19:14:25Z"
+  generation: 1
+  labels:
+    cloud.sealos.io/cronjob: ui-smoke-<case-id>
+    cronjob-launchpad-name: ""
+    cronjob-type: image
+  name: ui-smoke-<case-id>
+  namespace: ns-admin
+  resourceVersion: <RESOURCE_VERSION>
+  uid: <UID>
+spec:
+  concurrencyPolicy: Replace
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    metadata:
+      creationTimestamp: null
+    spec:
+      template:
+        metadata:
+          creationTimestamp: null
+        spec:
+          automountServiceAccountToken: false
+          containers:
+          - args:
+            - echo ui-smoke-from-page
+            command:
+            - /bin/sh
+            - -c
+            image: labring4docker/curl-kubectl:v1.0.0
+            imagePullPolicy: IfNotPresent
+            name: ui-smoke-<case-id>
+            resources: {}
+            terminationMessagePath: /dev/termination-log
+            terminationMessagePolicy: File
+          dnsPolicy: ClusterFirst
+          restartPolicy: OnFailure
+          schedulerName: default-scheduler
+          securityContext: {}
+          serviceAccount: default
+          serviceAccountName: default
+          terminationGracePeriodSeconds: 30
+  schedule: '*/5 * * * *'
+  startingDeadlineSeconds: 60
+  successfulJobsHistoryLimit: 3
+  suspend: false
+  timeZone: Asia/Shanghai
+status:
+  active:
+  - apiVersion: batch/v1
+    kind: Job
+    name: ui-smoke-<job-id>
+    namespace: ns-admin
+    resourceVersion: <RESOURCE_VERSION>
+    uid: <UID>
+  lastScheduleTime: "2026-05-29T19:15:00Z"

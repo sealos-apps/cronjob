@@ -1,0 +1,37 @@
+# after cronjob upgrade 2026-05-29T18:35:27+00:00
+## helm cronjob
+NAME                        	NAMESPACE           	REVISION	UPDATED                                	STATUS  	CHART                            	APP VERSION
+cronjob                     	cronjob             	1       	2026-05-29 18:35:01.395161984 +0000 UTC	deployed	cronjob-1.0.0                    	latest
+
+## namespaces
+NAME                     STATUS   AGE
+cronjob                  Active   27s
+
+## app cr
+NAMESPACE    NAME            AGE
+app-system   cronjob         15m
+
+## cronjob resources
+NAME                      READY   UP-TO-DATE   AVAILABLE   AGE   CONTAINERS   IMAGES                                            SELECTOR
+deployment.apps/cronjob   1/1     1            1           28s   cronjob      ghcr.io/sealos-apps/cronjob/cronjob:sha-99799cd   app=cronjob
+
+NAME                           READY   STATUS    RESTARTS   AGE   IP           NODE      NOMINATED NODE   READINESS GATES
+pod/cronjob-<pod-id>   1/1     Running   0          27s   <POD_OR_SERVICE_IP>   <TEST_NODE>   <none>           <none>
+
+NAME              TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)    AGE   SELECTOR
+service/cronjob   ClusterIP   <POD_OR_SERVICE_IP>   <none>        3000/TCP   28s   app=cronjob
+
+NAME                                CLASS   HOSTS                           ADDRESS   PORTS     AGE
+ingress.networking.k8s.io/cronjob   nginx   <APP_DOMAIN>             80, 443   27s
+
+NAME                         DATA   AGE
+configmap/cronjob-config     1      28s
+configmap/kube-root-ca.crt   1      28s
+
+## old namespace
+
+## old helm
+Error: release: not found
+
+## old values
+/root/.sealos/cloud/values/apps/cronjob/cronjob-values.yaml

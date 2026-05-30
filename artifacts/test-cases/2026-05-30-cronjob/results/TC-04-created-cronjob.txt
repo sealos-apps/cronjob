@@ -1,0 +1,11 @@
+=== cronjob object ===
+NAME                 SCHEDULE      SUSPEND   ACTIVE   LAST SCHEDULE   AGE   CONTAINERS           IMAGES                               SELECTOR
+ui-smoke-<case-id>   */5 * * * *   False     1        4s              39s   ui-smoke-<case-id>   labring4docker/curl-kubectl:v1.0.0   <none>
+=== jobs ===
+=== pods ===
+ui-smoke-<job-id>-<pod-id>   0/1     ContainerCreating   0          4s    <none>   <TEST_NODE>   <none>           <none>
+=== yaml summary ===
+*/5 * * * *
+labring4docker/curl-kubectl:v1.0.0
+["/bin/sh","-c"]
+["echo ui-smoke-from-page"]

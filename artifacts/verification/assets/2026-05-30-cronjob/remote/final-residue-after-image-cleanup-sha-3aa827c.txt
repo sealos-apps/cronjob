@@ -1,0 +1,3 @@
+=== active resources residue ===
+=== image cache residue ===
+sealos.hub:5000/sealos-apps/cronjob/cronjob                      sha-3aa827c                                                   98f87a5f56af0       <IMAGE_SIZE>

@@ -1,0 +1,11 @@
+NAME                                 READY   UP-TO-DATE   AVAILABLE   AGE   CONTAINERS     IMAGES                                           SELECTOR
+deployment.apps/admin-sealos-admin   1/1     1            1           54s   sealos-admin   ghcr.io/sealos-apps/admin/admin:latest-e568cb1   app.kubernetes.io/instance=admin,app.kubernetes.io/name=sealos-admin
+
+NAME                                      READY   STATUS    RESTARTS   AGE   IP           NODE      NOMINATED NODE   READINESS GATES
+pod/admin-sealos-admin-<pod-id>   1/1     Running   0          54s   <POD_OR_SERVICE_IP>   <TEST_NODE>   <none>           <none>
+
+NAME                         TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)   AGE   SELECTOR
+service/admin-sealos-admin   ClusterIP   <POD_OR_SERVICE_IP>   <none>        80/TCP    54s   app.kubernetes.io/instance=admin,app.kubernetes.io/name=sealos-admin
+
+NAME                                           CLASS    HOSTS                                        ADDRESS   PORTS     AGE
+ingress.networking.k8s.io/admin-sealos-admin   <none>   <APP_DOMAIN>             80, 443   54s
