@@ -27,14 +27,28 @@ import { getLangStore } from './cookieUtils';
 import { getJobEvents, getJobPodList } from '@/api/job';
 import { cpuFormatToM, memoryFormatToMi } from '@labring/sealos-shared-sdk';
 
+const formatCronSchedule = (schedule: string, locale: string) => {
+  try {
+    return cronstrue.toString(schedule, { locale });
+  } catch (error) {
+    return schedule;
+  }
+};
+
+const formatNextExecutionTime = (schedule: string) => {
+  try {
+    const nextTime = cronParser.parseExpression(schedule).next().toString();
+    return dayjs(nextTime).format('YYYY/MM/DD HH:mm');
+  } catch (error) {
+    return '-';
+  }
+};
+
 export const adaptCronJobList = (job: V1CronJob): CronJobListItemType => {
   const LANG_KEY = getLangStore() === 'en' ? 'en' : 'zh_CN';
   const status_str = job.spec?.suspend ? StatusEnum.Stopped : StatusEnum.Running;
-  let _schedule = cronstrue.toString(job.spec?.schedule || '* * * * *', { locale: LANG_KEY });
-  let nextTime = cronParser
-    .parseExpression(job.spec?.schedule || '* * * * *')
-    .next()
-    .toString();
+  const schedule = job.spec?.schedule || '* * * * *';
+  const _schedule = formatCronSchedule(schedule, LANG_KEY);
 
   return {
     id: job.metadata?.uid || '',
@@ -46,17 +60,14 @@ export const adaptCronJobList = (job: V1CronJob): CronJobListItemType => {
     schedule: _schedule,
     lastScheduleTime: dayjs(job?.status?.lastScheduleTime).format('YYYY/MM/DD HH:mm'),
     lastSuccessfulTime: dayjs(job?.status?.lastSuccessfulTime).format('YYYY/MM/DD HH:mm'),
-    nextExecutionTime: dayjs(nextTime).format('YYYY/MM/DD HH:mm')
+    nextExecutionTime: formatNextExecutionTime(schedule)
   };
 };
 
 export const adaptCronJobDetail = async (job: V1CronJob): Promise<CronJobEditType> => {
   const LANG_KEY = getLangStore() === 'en' ? 'en' : 'zh_CN';
-  let _schedule = cronstrue.toString(job.spec?.schedule || '* * * * *', { locale: LANG_KEY });
-  let nextTime = cronParser
-    .parseExpression(job.spec?.schedule || '* * * * *')
-    .next()
-    .toString();
+  const schedule = job.spec?.schedule || '* * * * *';
+  const _schedule = formatCronSchedule(schedule, LANG_KEY);
   const status_str = job.spec?.suspend ? StatusEnum.Stopped : StatusEnum.Running;
   const {
     cpu,
@@ -67,7 +78,7 @@ export const adaptCronJobDetail = async (job: V1CronJob): Promise<CronJobEditTyp
     memory,
     replicas,
     launchpadKind
-  } = job.metadata?.annotations as CronJobAnnotations;
+  } = (job.metadata?.annotations || {}) as CronJobAnnotations;
 
   const getUrl = (): string => {
     const commands = job.spec?.jobTemplate?.spec?.template?.spec?.containers?.[0]?.args;
@@ -120,7 +131,7 @@ export const adaptCronJobDetail = async (job: V1CronJob): Promise<CronJobEditTyp
     isPause: !!job.spec?.suspend,
     creatTime: dayjs(job.metadata?.creationTimestamp).format('YYYY-MM-DD HH:mm'),
     _schedule: _schedule,
-    nextExecutionTime: dayjs(nextTime).format('YYYY/MM/DD HH:mm')
+    nextExecutionTime: formatNextExecutionTime(schedule)
   };
 };
 
