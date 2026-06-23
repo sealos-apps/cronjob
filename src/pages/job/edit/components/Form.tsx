@@ -9,6 +9,7 @@ import type { QueryType } from '@/types';
 import { CronJobEditType } from '@/types/job';
 import { sliderNumber2MarkList } from '@/utils/adapt';
 import { obj2Query } from '@/utils/tools';
+import { validateJobName } from '@/utils/validate';
 import {
   Box,
   Flex,
@@ -22,7 +23,8 @@ import {
   NumberInputStepper,
   Text,
   Button,
-  useDisclosure
+  useDisclosure,
+  FormErrorMessage
 } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { throttle } from 'lodash';
@@ -192,16 +194,16 @@ const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) =
                   autoFocus={true}
                   placeholder={t('Form.JobNamePlaceholder') || ''}
                   {...register('jobName', {
-                    required: t('Not allowed to change app name') || '',
-                    pattern: {
-                      value: /^[a-z][a-z0-9]+([-.][a-z0-9]+)*$/g,
-                      message: t(
-                        'The application name can contain only lowercase letters, digits, and hyphens (-) and must start with a letter'
-                      )
+                    validate: (value) => {
+                      const result = validateJobName(value);
+                      return result === true ? true : t(result);
                     }
                   })}
                 />
               </Flex>
+              <FormErrorMessage ml="80px" mt={1}>
+                {errors.jobName?.message}
+              </FormErrorMessage>
             </FormControl>
             {/* cron */}
             <Cron formHook={formHook} />
