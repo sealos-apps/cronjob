@@ -12,17 +12,21 @@ vi.mock('@/services/backend/kubernetes', () => ({
 }));
 
 import handler from '@/pages/api/cronjob/getCronJobList';
+import { cronJobKey } from '@/constants/keys';
 
 describe('/api/cronjob/getCronJobList', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('lists all cronjobs in the user namespace without requiring app-specific labels', async () => {
+  it('lists cronjobs managed by this app in the user namespace', async () => {
     const cronJobs = [
       {
         metadata: {
-          name: 'without-ui-label'
+          name: 'managed-cronjob',
+          labels: {
+            [cronJobKey]: 'managed-cronjob'
+          }
         },
         spec: {
           schedule: '0 * * * *'
@@ -49,7 +53,14 @@ describe('/api/cronjob/getCronJobList', () => {
 
     await handler({ headers: { authorization: 'kubeconfig' } } as any, res as any);
 
-    expect(listNamespacedCronJob).toHaveBeenCalledWith('ns-test');
+    expect(listNamespacedCronJob).toHaveBeenCalledWith(
+      'ns-test',
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      cronJobKey
+    );
     expect(res.json).toHaveBeenCalledWith(
       expect.objectContaining({
         code: 200,
