@@ -1,4 +1,3 @@
-import { cronJobKey } from '@/constants/keys';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
@@ -10,14 +9,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const { namespace, k8sBatch } = await getK8s({
       kubeconfig: await authSession(req)
     });
-    const response = await k8sBatch.listNamespacedCronJob(
-      namespace,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      cronJobKey
-    );
+    const response = await k8sBatch.listNamespacedCronJob(namespace);
 
     jsonRes(res, { data: response?.body?.items });
   } catch (err: any) {
