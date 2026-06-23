@@ -237,6 +237,8 @@
   "8 am every day": "每天上午8点",
   "examples": "更多示例",
   "Not allowed to change app name": "不允许更改应用程序名称",
+  "The job name cannot be empty": "任务名称不能为空",
+  "The application name can contain only lowercase letters, digits, and hyphens (-) and must start with a letter": "任务名称只能包含小写字母、数字和连字符 (-)，并且必须以字母开头",
   "The user name cannot be empty": "用户名不能为空",
   "Executed": "执行于",
   "Historical Mission": "历史任务",

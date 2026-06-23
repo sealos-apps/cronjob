@@ -188,6 +188,8 @@
   "8 am every day": "8 am every day",
   "examples": "examples",
   "Not allowed to change app name": "Not allowed to change app name",
+  "The job name cannot be empty": "The job name cannot be empty",
+  "The application name can contain only lowercase letters, digits, and hyphens (-) and must start with a letter": "The job name can contain only lowercase letters, digits, and hyphens (-) and must start with a letter",
   "The user name cannot be empty": "The user name cannot be empty",
   "Executed": "Executed",
   "Historical Mission": "Job History",
