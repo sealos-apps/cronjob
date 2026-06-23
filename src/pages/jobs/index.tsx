@@ -5,6 +5,7 @@ import { useJobStore } from '@/store/job';
 import { useLoading } from '@/hooks/useLoading';
 import { useState } from 'react';
 import { serviceSideProps } from '@/utils/i18n';
+import { getJobsViewState } from '@/utils/jobsViewState';
 
 function Home() {
   const { jobList, setJobList } = useJobStore();
@@ -17,15 +18,13 @@ function Home() {
       setInitialized(true);
     }
   });
+  const viewState = getJobsViewState({ initialized, jobListLength: jobList.length });
 
   return (
     <>
-      {jobList.length === 0 && initialized ? (
-        <Empty />
-      ) : (
-        <List list={jobList} refetchApps={refetch} />
-      )}
-      <Loading loading={!initialized} />
+      {viewState === 'empty' && <Empty />}
+      {viewState === 'list' && <List list={jobList} refetchApps={refetch} />}
+      <Loading loading={viewState === 'loading'} />
     </>
   );
 }
