@@ -6,19 +6,27 @@ import { useLoading } from '@/hooks/useLoading';
 import { useState } from 'react';
 import { serviceSideProps } from '@/utils/i18n';
 import { getJobsViewState } from '@/utils/jobsViewState';
+import { useUserStore } from '@/store/user';
 
 function Home() {
   const { jobList, setJobList } = useJobStore();
+  const session = useUserStore((state) => state.session);
   const { Loading } = useLoading();
   const [initialized, setInitialized] = useState(false);
+  const hasKubeConfig = Boolean(session?.kubeconfig || process.env.NEXT_PUBLIC_MOCK_USER);
 
   const { refetch } = useQuery(['initCronJobList'], setJobList, {
+    enabled: hasKubeConfig,
     refetchInterval: 3000,
-    onSettled() {
+    onSuccess() {
       setInitialized(true);
     }
   });
-  const viewState = getJobsViewState({ initialized, jobListLength: jobList.length });
+  const viewState = getJobsViewState({
+    hasKubeConfig,
+    initialized,
+    jobListLength: jobList.length
+  });
 
   return (
     <>
