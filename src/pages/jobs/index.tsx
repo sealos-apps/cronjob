@@ -5,7 +5,6 @@ import { useJobStore } from '@/store/job';
 import { useLoading } from '@/hooks/useLoading';
 import { useState } from 'react';
 import { serviceSideProps } from '@/utils/i18n';
-import { getJobsViewState } from '@/utils/jobsViewState';
 import { useUserStore } from '@/store/user';
 
 function Home() {
@@ -22,17 +21,15 @@ function Home() {
       setInitialized(true);
     }
   });
-  const viewState = getJobsViewState({
-    hasKubeConfig,
-    initialized,
-    jobListLength: jobList.length
-  });
+  const isReady = hasKubeConfig && initialized;
+  const showEmpty = isReady && jobList.length === 0;
+  const showList = isReady && jobList.length > 0;
 
   return (
     <>
-      {viewState === 'empty' && <Empty />}
-      {viewState === 'list' && <List list={jobList} refetchApps={refetch} />}
-      <Loading loading={viewState === 'loading'} />
+      {showEmpty && <Empty />}
+      {showList && <List list={jobList} refetchApps={refetch} />}
+      <Loading loading={!isReady} />
     </>
   );
 }
