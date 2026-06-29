@@ -37,6 +37,8 @@ import Cron from './Cron';
 import Label from './Label';
 import EditEnvs from './EditEnvs';
 
+const getCronJobTypeQaValue = (type?: string) => (type === 'image' ? 'command' : type);
+
 const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) => {
   if (!formHook) return null;
   const { t } = useTranslation();
@@ -216,6 +218,29 @@ const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) =
                 placeholder={`${t('Type')}`}
                 value={getValues('jobType')}
                 list={CronJobTypeList}
+                data-testid="cronjob.edit.type-select"
+                data-qa-module="cronjob"
+                data-qa-object="job"
+                data-qa-field="type"
+                data-qa-state={getCronJobTypeQaValue(getValues('jobType'))}
+                data-qa-disabled-reason={isEdit ? 'immutable_type' : undefined}
+                menuListProps={{
+                  'data-testid': 'cronjob.edit.type-menu',
+                  'data-qa-module': 'cronjob',
+                  'data-qa-object': 'job',
+                  'data-qa-field': 'type'
+                }}
+                getItemProps={(item) => {
+                  const qaValue = getCronJobTypeQaValue(item.id);
+                  return {
+                    'data-testid': `cronjob.edit.type-option.${qaValue}`,
+                    'data-qa-module': 'cronjob',
+                    'data-qa-object': 'job',
+                    'data-qa-field': 'type',
+                    'data-qa-value': qaValue,
+                    'data-qa-state': getValues('jobType') === item.id ? 'selected' : 'ready'
+                  };
+                }}
                 onchange={(val: any) => {
                   setValue('jobType', val);
                   if (getValues('jobType') === 'image') {
