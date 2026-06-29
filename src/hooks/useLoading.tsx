@@ -1,11 +1,16 @@
 import { useState, useCallback } from 'react';
 import { Spinner, Flex } from '@chakra-ui/react';
+import type { FlexProps } from '@chakra-ui/react';
 
 export const useLoading = (props?: { defaultLoading: boolean }) => {
   const [isLoading, setIsLoading] = useState(props?.defaultLoading || false);
 
   const Loading = useCallback(
-    ({ loading, fixed = true }: { loading?: boolean; fixed?: boolean }): JSX.Element | null => {
+    ({
+      loading,
+      fixed = true,
+      ...props
+    }: { loading?: boolean; fixed?: boolean } & FlexProps): JSX.Element | null => {
       return (
         <Flex
           position={fixed ? 'fixed' : 'absolute'}
@@ -18,6 +23,7 @@ export const useLoading = (props?: { defaultLoading: boolean }) => {
           alignItems={'center'}
           justifyContent={'center'}
           visibility={isLoading || loading ? 'visible' : 'hidden'}
+          {...props}
         >
           <Spinner thickness="4px" speed="0.65s" emptyColor="gray.200" color="blue.500" size="xl" />
         </Flex>

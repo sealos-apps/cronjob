@@ -43,7 +43,31 @@ const Header = ({
     content: 'Confirm to restart this application?'
   });
   const { openConfirm: onOpenPause, ConfirmChild: PauseChild } = useConfirm({
-    content: t('pause_message')
+    content: t('pause_message'),
+    dialogProps: {
+      'data-testid': 'cronjob.pause.confirm-dialog',
+      'data-qa-module': 'cronjob',
+      'data-qa-object': 'cronjob',
+      'data-qa-action': 'pause',
+      'data-qa-risk': 'resource_mutation',
+      'data-qa-resource-type': 'cronjob',
+      'data-qa-resource-id': appName
+    },
+    cancelButtonProps: {
+      'data-testid': 'cronjob.pause.cancel-button',
+      'data-qa-module': 'cronjob',
+      'data-qa-object': 'cronjob',
+      'data-qa-action': 'cancel'
+    },
+    confirmButtonProps: {
+      'data-testid': 'cronjob.pause.confirm-button',
+      'data-qa-module': 'cronjob',
+      'data-qa-object': 'cronjob',
+      'data-qa-action': 'pause',
+      'data-qa-risk': 'resource_mutation',
+      'data-qa-resource-type': 'cronjob',
+      'data-qa-resource-id': appName
+    }
   });
 
   const handlePauseApp = useCallback(async () => {
@@ -71,14 +95,40 @@ const Header = ({
   }, [appName, executeOperation, refetchCronJob, t]);
 
   return (
-    <Flex h={'86px'} alignItems={'center'}>
-      <Button variant={'unstyled'} onClick={() => router.replace('/jobs')} lineHeight={1}>
+    <Flex
+      h={'86px'}
+      alignItems={'center'}
+      data-testid="cronjob.detail.header"
+      data-qa-module="cronjob"
+      data-qa-object="cronjob"
+      data-qa-resource-type="cronjob"
+      data-qa-resource-id={appName}
+      data-qa-state={appStatus.value}
+    >
+      <Button
+        variant={'unstyled'}
+        onClick={() => router.replace('/jobs')}
+        lineHeight={1}
+        data-testid="cronjob.detail.back-button"
+        data-qa-module="cronjob"
+        data-qa-object="cronjob"
+        data-qa-action="back"
+      >
         <MyIcon name="arrowLeft" />
       </Button>
       <Box ml={5} mr={3} fontSize={'3xl'} fontWeight={'bold'}>
         {appName}
       </Box>
-      <StatusTag status={appStatus} showBorder />
+      <Box
+        data-testid="cronjob.detail.status-badge"
+        data-qa-module="cronjob"
+        data-qa-object="cronjob"
+        data-qa-resource-type="cronjob"
+        data-qa-resource-id={appName}
+        data-qa-state={appStatus.value}
+      >
+        <StatusTag status={appStatus} showBorder />
+      </Box>
       {!isLargeScreen && (
         <Box mx={4}>
           <Button
@@ -89,6 +139,12 @@ const Header = ({
             variant={'base'}
             bg={'white'}
             onClick={() => setShowSlider(true)}
+            data-testid="cronjob.detail.open-summary-button"
+            data-qa-module="cronjob"
+            data-qa-object="summary"
+            data-qa-action="open"
+            data-qa-resource-type="cronjob"
+            data-qa-resource-id={appName}
           >
             {t('Details')}
           </Button>
@@ -106,6 +162,14 @@ const Header = ({
         variant={'base'}
         bg={'white'}
         onClick={handleRunJob}
+        data-testid="cronjob.detail.implement-button"
+        data-qa-module="cronjob"
+        data-qa-object="cronjob"
+        data-qa-action="implement"
+        data-qa-risk="resource_mutation"
+        data-qa-state={loading ? 'loading' : 'ready'}
+        data-qa-resource-type="cronjob"
+        data-qa-resource-id={appName}
       >
         {t('implement')}
       </Button>
@@ -119,6 +183,14 @@ const Header = ({
           variant={'base'}
           bg={'white'}
           onClick={handleStartApp}
+          data-testid="cronjob.detail.start-button"
+          data-qa-module="cronjob"
+          data-qa-object="cronjob"
+          data-qa-action="start"
+          data-qa-risk="resource_mutation"
+          data-qa-state={loading ? 'loading' : 'ready'}
+          data-qa-resource-type="cronjob"
+          data-qa-resource-id={appName}
         >
           {t('Continue')}
         </Button>
@@ -132,6 +204,14 @@ const Header = ({
           variant={'base'}
           bg={'white'}
           onClick={onOpenPause(handlePauseApp)}
+          data-testid="cronjob.detail.pause-button"
+          data-qa-module="cronjob"
+          data-qa-object="cronjob"
+          data-qa-action="pause"
+          data-qa-risk="resource_mutation"
+          data-qa-state={loading ? 'loading' : 'ready'}
+          data-qa-resource-type="cronjob"
+          data-qa-resource-id={appName}
         >
           {t('Pause')}
         </Button>
@@ -148,6 +228,12 @@ const Header = ({
           onClick={() => {
             router.push(`/job/edit?name=${appName}`);
           }}
+          data-testid="cronjob.detail.update-button"
+          data-qa-module="cronjob"
+          data-qa-object="cronjob"
+          data-qa-action="update"
+          data-qa-resource-type="cronjob"
+          data-qa-resource-id={appName}
         >
           {t('Update')}
         </Button>
@@ -164,6 +250,15 @@ const Header = ({
         }}
         isDisabled={loading}
         onClick={onOpenDelModal}
+        data-testid="cronjob.detail.delete-button"
+        data-qa-module="cronjob"
+        data-qa-object="cronjob"
+        data-qa-action="delete"
+        data-qa-risk="destructive"
+        data-qa-state={loading ? 'loading' : 'ready'}
+        data-qa-disabled-reason={loading ? 'loading' : undefined}
+        data-qa-resource-type="cronjob"
+        data-qa-resource-id={appName}
       >
         {t('Delete')}
       </Button>

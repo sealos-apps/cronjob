@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box, BoxProps, Grid, Flex } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
+import type { QaProps } from '@/types/qa';
 
 interface Props extends BoxProps {
   columns: {
@@ -10,12 +11,13 @@ interface Props extends BoxProps {
     render?: (item: any) => JSX.Element;
   }[];
   data: any[];
+  getRowProps?: (item: any, index: number) => BoxProps & QaProps;
 }
 
-const Table = ({ columns, data }: Props) => {
+const Table = ({ columns, data, getRowProps, ...props }: Props) => {
   const { t } = useTranslation();
   return (
-    <Grid templateColumns={`repeat(${columns.length},1fr)`} overflowX={'auto'}>
+    <Grid templateColumns={`repeat(${columns.length},1fr)`} overflowX={'auto'} {...props}>
       {columns.map((item, i) => (
         <Box
           mb={2}
@@ -39,27 +41,32 @@ const Table = ({ columns, data }: Props) => {
         </Box>
       ))}
       {data.map((item: any, index1) =>
-        columns.map((col, index2) => (
-          <Flex
-            key={col.key}
-            alignItems={'center'}
-            bg={'white'}
-            px={3}
-            py={4}
-            fontSize={'sm'}
-            color={'#363C42'}
-            borderBottom={'1px solid'}
-            borderBottomColor={index1 !== data.length - 1 ? 'myGray.100' : 'transparent'}
-            borderTopLeftRadius={index1 === 0 && index2 === 0 ? 'md' : ''}
-            borderTopRightRadius={index1 === 0 && index2 === columns.length - 1 ? 'md' : ''}
-            borderBottomLeftRadius={index1 === data.length - 1 && index2 === 0 ? 'md' : ''}
-            borderBottomEndRadius={
-              index1 === data.length - 1 && index2 === columns.length - 1 ? 'md' : ''
-            }
-          >
-            {col.render ? col.render(item) : col.dataIndex ? `${item[col.dataIndex]}` : ''}
-          </Flex>
-        ))
+        columns.map((col, index2) => {
+          const rowProps = index2 === 0 ? getRowProps?.(item, index1) : undefined;
+          return (
+            <Flex
+              key={col.key}
+              alignItems={'center'}
+              bg={'white'}
+              px={3}
+              py={4}
+              fontSize={'sm'}
+              color={'#363C42'}
+              borderBottom={'1px solid'}
+              borderBottomColor={index1 !== data.length - 1 ? 'myGray.100' : 'transparent'}
+              borderTopLeftRadius={index1 === 0 && index2 === 0 ? 'md' : ''}
+              borderTopRightRadius={index1 === 0 && index2 === columns.length - 1 ? 'md' : ''}
+              borderBottomLeftRadius={index1 === data.length - 1 && index2 === 0 ? 'md' : ''}
+              borderBottomEndRadius={
+                index1 === data.length - 1 && index2 === columns.length - 1 ? 'md' : ''
+              }
+              {...rowProps}
+              data-qa-cell={col.key}
+            >
+              {col.render ? col.render(item) : col.dataIndex ? `${item[col.dataIndex]}` : ''}
+            </Flex>
+          );
+        })
       )}
     </Grid>
   );

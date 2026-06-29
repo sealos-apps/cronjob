@@ -40,7 +40,13 @@ const ErrorModal = ({
   return (
     <Modal isOpen={true} onClose={onClose}>
       <ModalOverlay />
-      <ModalContent>
+      <ModalContent
+        data-testid="cronjob.error.dialog"
+        data-qa-module="cronjob"
+        data-qa-object="operation"
+        data-qa-state="error"
+        data-qa-error-code={errorCode}
+      >
         <ModalHeader display={'flex'} alignItems={'center'} bg={'#fff'} borderBottom={'none'}>
           <MyIcon color={'#CA8A04'} width={'16px'} height={'16px'} name="warning"></MyIcon>
           <Box ml={3} fontSize={'xl'}>
@@ -59,6 +65,11 @@ const ErrorModal = ({
               }
               onClose();
             }}
+            data-testid="cronjob.error.confirm-button"
+            data-qa-module="cronjob"
+            data-qa-object="operation"
+            data-qa-action={errorCode === ResponseCode.BALANCE_NOT_ENOUGH ? 'open_recharge' : 'confirm'}
+            data-qa-error-code={errorCode}
           >
             {errorCode === ResponseCode.BALANCE_NOT_ENOUGH ? t('add_credit') : t('Confirm')}
           </Button>

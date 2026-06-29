@@ -29,7 +29,14 @@ function Home() {
     <>
       {showEmpty && <Empty />}
       {showList && <List list={jobList} refetchApps={refetch} />}
-      <Loading loading={!isReady} />
+      <Loading
+        loading={!isReady}
+        data-testid="cronjob.list.loading"
+        data-qa-module="cronjob"
+        data-qa-object="list"
+        data-qa-state={isReady ? 'ready' : 'loading'}
+        data-qa-loading={!isReady ? 'true' : 'false'}
+      />
     </>
   );
 }

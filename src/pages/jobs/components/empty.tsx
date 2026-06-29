@@ -35,10 +35,23 @@ const Empty = () => {
       alignItems="center"
       justifyContent="center"
       bg={'#F3F4F5'}
+      data-testid="cronjob.list.empty-state"
+      data-qa-module="cronjob"
+      data-qa-object="list"
+      data-qa-state="empty"
     >
       <MyIcon name={'noEvents'} color={'transparent'} width={'80px'} height={'80px'} />
       <Box py={8}>{t('job.You have no tasks yet')}</Box>
-      <Button w={155} mt={5} variant={'primary'} onClick={handleCreateApp}>
+      <Button
+        w={155}
+        mt={5}
+        variant={'primary'}
+        onClick={handleCreateApp}
+        data-testid="cronjob.list.empty-create-button"
+        data-qa-module="cronjob"
+        data-qa-object="cronjob"
+        data-qa-action="create"
+      >
         {t('job.create')}
       </Button>
     </Box>

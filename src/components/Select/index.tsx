@@ -1,20 +1,25 @@
 import React from 'react';
-import { Menu, MenuButton, MenuList, MenuItem, Button, useDisclosure, Box } from '@chakra-ui/react';
-import type { ButtonProps } from '@chakra-ui/react';
+import { Menu, MenuButton, MenuList, Button, useDisclosure, Box } from '@chakra-ui/react';
+import type { BoxProps, ButtonProps, MenuListProps } from '@chakra-ui/react';
 import { ChevronDownIcon } from '@chakra-ui/icons';
 import { useTranslation } from 'next-i18next';
+import type { QaProps } from '@/types/qa';
+
+type SelectItem = {
+  label: string;
+  id: string;
+};
 
 interface Props extends ButtonProps {
   isDisabled?: boolean;
   value?: string;
   placeholder?: string;
-  list: {
-    label: string;
-    id: string;
-  }[];
+  list: SelectItem[];
   width?: number | string;
   icon?: React.ReactNode;
   onchange?: (val: string) => void;
+  menuListProps?: MenuListProps & QaProps;
+  getItemProps?: (item: SelectItem) => BoxProps & QaProps;
 }
 
 const MySelect = ({
@@ -25,6 +30,8 @@ const MySelect = ({
   list,
   onchange,
   icon = <ChevronDownIcon />,
+  menuListProps,
+  getItemProps,
   ...props
 }: Props) => {
   const { t } = useTranslation();
@@ -88,6 +95,7 @@ const MySelect = ({
           zIndex={99}
           maxH={'300px'}
           overflow={'overlay'}
+          {...menuListProps}
         >
           {list?.map((item) => (
             <Box
@@ -98,6 +106,7 @@ const MySelect = ({
                     color: 'myBlue.600'
                   }
                 : {})}
+              {...getItemProps?.(item)}
               onClick={() => {
                 if (onchange && value !== item.id) {
                   onchange(item.id);

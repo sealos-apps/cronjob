@@ -16,7 +16,16 @@ const Yaml = ({ yamlList = [], pxVal }: { yamlList: YamlItemType[]; pxVal: numbe
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   return (
-    <Flex w="100%" h="100%" justifyContent={'center'} px="32px">
+    <Flex
+      w="100%"
+      h="100%"
+      justifyContent={'center'}
+      px="32px"
+      data-testid="cronjob.edit.yaml-view"
+      data-qa-module="cronjob"
+      data-qa-object="yaml"
+      data-qa-state={yamlList.length ? 'ready' : 'empty'}
+    >
       <Box w="220px">
         <Tabs
           list={[
@@ -24,6 +33,17 @@ const Yaml = ({ yamlList = [], pxVal }: { yamlList: YamlItemType[]; pxVal: numbe
             { id: 'yaml', label: 'YAML File' }
           ]}
           activeId={'yaml'}
+          data-testid="cronjob.edit.mode-tabs"
+          data-qa-module="cronjob"
+          data-qa-object="editor"
+          data-qa-state="yaml"
+          getItemProps={(item) => ({
+            'data-testid': `cronjob.edit.${item.id}-tab`,
+            'data-qa-module': 'cronjob',
+            'data-qa-object': 'editor',
+            'data-qa-action': 'switch_tab',
+            'data-qa-state': item.id === 'yaml' ? 'active' : 'inactive'
+          })}
           onChange={() =>
             router.replace(
               `/job/edit?${obj2Query({
@@ -62,6 +82,12 @@ const Yaml = ({ yamlList = [], pxVal }: { yamlList: YamlItemType[]; pxVal: numbe
                   }
                 : {})}
               onClick={() => setSelectedIndex(index)}
+              data-testid="cronjob.edit.yaml-file-item"
+              data-qa-module="cronjob"
+              data-qa-object="yaml"
+              data-qa-field="filename"
+              data-qa-resource-id={file.filename}
+              data-qa-state={index === selectedIndex ? 'selected' : 'ready'}
             >
               {file.filename}
             </Box>
@@ -80,6 +106,11 @@ const Yaml = ({ yamlList = [], pxVal }: { yamlList: YamlItemType[]; pxVal: numbe
           border={theme.borders.base}
           borderRadius={'md'}
           position={'relative'}
+          data-testid="cronjob.edit.yaml-panel"
+          data-qa-module="cronjob"
+          data-qa-object="yaml"
+          data-qa-resource-id={yamlList[selectedIndex].filename}
+          data-qa-state="ready"
         >
           <Flex px={8} py={4} bg={'myWhite.400'}>
             <Box flex={1} fontSize={'xl'} color={'myGray.900'} fontWeight={'bold'}>
@@ -90,11 +121,26 @@ const Yaml = ({ yamlList = [], pxVal }: { yamlList: YamlItemType[]; pxVal: numbe
               color={'myGray.600'}
               _hover={{ color: '#219BF4' }}
               onClick={() => copyData(yamlList[selectedIndex].value)}
+              data-testid="cronjob.edit.yaml-copy-button"
+              data-qa-module="cronjob"
+              data-qa-object="yaml"
+              data-qa-action="copy"
+              data-qa-resource-id={yamlList[selectedIndex].filename}
             >
               <MyIcon name="copy" w={'16px'} />
             </Box>
           </Flex>
-          <Box flex={1} h={0} overflow={'auto'} bg={'#ffffff'} p={4}>
+          <Box
+            flex={1}
+            h={0}
+            overflow={'auto'}
+            bg={'#ffffff'}
+            p={4}
+            data-testid="cronjob.edit.yaml-code"
+            data-qa-module="cronjob"
+            data-qa-object="yaml"
+            data-qa-resource-id={yamlList[selectedIndex].filename}
+          >
             <YamlCode className={styles.code} content={yamlList[selectedIndex].value} />
           </Box>
         </Flex>

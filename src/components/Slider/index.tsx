@@ -7,6 +7,13 @@ import {
   SliderMark,
   Box
 } from '@chakra-ui/react';
+import type { SliderProps, BoxProps } from '@chakra-ui/react';
+import type { QaProps } from '@/types/qa';
+
+type SliderMarkItem = {
+  label: string | number;
+  value: number;
+};
 
 const MySlider = ({
   markList,
@@ -14,25 +21,34 @@ const MySlider = ({
   activeVal,
   max = 100,
   min = 0,
-  step = 1
+  step = 1,
+  getMarkProps,
+  ...props
 }: {
-  markList: {
-    label: string | number;
-    value: number;
-  }[];
+  markList: SliderMarkItem[];
   activeVal?: number;
   setVal: (index: number) => void;
   max?: number;
   min?: number;
   step?: number;
-}) => {
+  getMarkProps?: (item: SliderMarkItem) => BoxProps & QaProps;
+} & Omit<SliderProps, 'onChange' | 'value' | 'max' | 'min' | 'step'>) => {
   const value = useMemo(() => {
     const index = markList.findIndex((item) => item.value === activeVal);
     return index > -1 ? index : 0;
   }, [activeVal, markList]);
 
   return (
-    <Slider w="500px" max={max} min={min} step={step} size={'lg'} value={value} onChange={setVal}>
+    <Slider
+      w="500px"
+      max={max}
+      min={min}
+      step={step}
+      size={'lg'}
+      value={value}
+      onChange={setVal}
+      {...props}
+    >
       {markList.map((item, i) => (
         <SliderMark
           key={item.value}
@@ -44,7 +60,7 @@ const MySlider = ({
             ? { color: 'myGray.900', fontWeight: 'bold' }
             : { color: 'myGray.500' })}
         >
-          <Box minW={'40px'} cursor={'pointer'}>
+          <Box minW={'40px'} cursor={'pointer'} {...getMarkProps?.(item)}>
             {item.label}
           </Box>
         </SliderMark>

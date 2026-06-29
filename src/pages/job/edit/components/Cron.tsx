@@ -58,6 +58,12 @@ export default function Cron({ formHook }: { formHook: UseFormReturn<CronJobEdit
           width={'300px'}
           autoFocus={false}
           placeholder={t('Form.Example') || ''}
+          data-testid="cronjob.edit.schedule-input"
+          data-qa-module="cronjob"
+          data-qa-object="schedule"
+          data-qa-field="schedule"
+          data-qa-state={cronMessage === 'Cron Err' ? 'error' : 'ready'}
+          data-qa-error-code={cronMessage === 'Cron Err' ? 'invalid_cron_expression' : undefined}
           {...register('schedule', {
             required: true,
             onChange: (e: ChangeEvent<HTMLInputElement>) => {
@@ -74,6 +80,12 @@ export default function Cron({ formHook }: { formHook: UseFormReturn<CronJobEdit
               fontSize={'12px'}
               fontWeight={400}
               key={item.cron}
+              data-testid="cronjob.edit.schedule-example"
+              data-qa-module="cronjob"
+              data-qa-object="schedule"
+              data-qa-action="apply_example"
+              data-qa-field="schedule"
+              data-qa-value={item.cron}
               onClick={() => {
                 setValue('schedule', item.cron);
               }}
@@ -88,12 +100,25 @@ export default function Cron({ formHook }: { formHook: UseFormReturn<CronJobEdit
             fontWeight={400}
             href="https://crontab.guru/examples.html"
             isExternal
+            data-testid="cronjob.edit.schedule-examples-link"
+            data-qa-module="cronjob"
+            data-qa-object="schedule"
+            data-qa-action="open_examples"
           >
             {t('examples')}
           </Link>
         </Flex>
       </Flex>
-      <Box alignItems={'self-start'} ml="12px" overflowWrap="break-word">
+      <Box
+        alignItems={'self-start'}
+        ml="12px"
+        overflowWrap="break-word"
+        data-testid="cronjob.edit.schedule-message"
+        data-qa-module="cronjob"
+        data-qa-object="schedule"
+        data-qa-state={cronMessage === 'Cron Err' ? 'error' : cronMessage ? 'ready' : 'empty'}
+        data-qa-error-code={cronMessage === 'Cron Err' ? 'invalid_cron_expression' : undefined}
+      >
         {cronMessage && `"${cronMessage}"`}
       </Box>
     </Flex>

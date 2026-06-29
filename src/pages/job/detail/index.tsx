@@ -47,7 +47,20 @@ export default function DetailPage({ appName }: { appName: string }) {
   );
 
   return (
-    <Flex flexDirection={'column'} height={'100vh'} backgroundColor={'#F3F4F5'} px={9} pb={4}>
+    <Flex
+      flexDirection={'column'}
+      height={'100vh'}
+      backgroundColor={'#F3F4F5'}
+      px={9}
+      pb={4}
+      data-testid="cronjob.detail.page"
+      data-qa-module="cronjob"
+      data-qa-object="cronjob"
+      data-qa-resource-type="cronjob"
+      data-qa-resource-id={appName}
+      data-qa-state={JobDetail?.status?.value || 'loading'}
+      data-qa-loading={JobDetail ? 'false' : 'true'}
+    >
       <Box>
         <Header
           appName={appName}
@@ -71,6 +84,12 @@ export default function DetailPage({ appName }: { appName: string }) {
           bg={'white'}
           borderRadius={'md'}
           border={'1px solid #DEE0E2'}
+          data-testid="cronjob.detail.summary-panel"
+          data-qa-module="cronjob"
+          data-qa-object="cronjob"
+          data-qa-resource-type="cronjob"
+          data-qa-resource-id={appName}
+          data-qa-state={JobDetail?.status?.value || 'loading'}
           {...(isLargeScreen
             ? {}
             : {
@@ -88,6 +107,12 @@ export default function DetailPage({ appName }: { appName: string }) {
           h={'100%'}
           flex={'1 1 740px'}
           bg={'white'}
+          data-testid="cronjob.detail.history-panel"
+          data-qa-module="cronjob"
+          data-qa-object="job_history"
+          data-qa-resource-type="cronjob"
+          data-qa-resource-id={appName}
+          data-qa-state={isLoading ? 'loading' : 'ready'}
         >
           {JobDetail ? (
             <AppMainInfo joblist={data} isLoading={isLoading} />
