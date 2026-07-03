@@ -9,16 +9,27 @@ import {
   useDisclosure,
   Button
 } from '@chakra-ui/react';
+import type { ButtonProps } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
+import type React from 'react';
+import type { QaProps } from '@/types/qa';
+
+type ConfirmDialogContentProps = React.ComponentProps<typeof AlertDialogContent>;
 
 export const useConfirm = ({
   title = 'Prompt',
   content,
-  confirmText = 'Confirm'
+  confirmText = 'Confirm',
+  dialogProps,
+  cancelButtonProps,
+  confirmButtonProps
 }: {
   title?: string;
   content: string;
   confirmText?: string;
+  dialogProps?: ConfirmDialogContentProps & QaProps;
+  cancelButtonProps?: ButtonProps & QaProps;
+  confirmButtonProps?: ButtonProps & QaProps;
 }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const { t } = useTranslation();
@@ -41,7 +52,7 @@ export const useConfirm = ({
       () => (
         <AlertDialog isOpen={isOpen} leastDestructiveRef={cancelRef} onClose={onClose}>
           <AlertDialogOverlay>
-            <AlertDialogContent>
+            <AlertDialogContent {...dialogProps}>
               <AlertDialogHeader fontSize="lg" fontWeight="bold">
                 {t(title)}
               </AlertDialogHeader>
@@ -51,6 +62,7 @@ export const useConfirm = ({
               <AlertDialogFooter>
                 <Button
                   colorScheme={'gray'}
+                  {...cancelButtonProps}
                   onClick={() => {
                     onClose();
                     typeof cancelCb.current === 'function' && cancelCb.current();
@@ -61,6 +73,7 @@ export const useConfirm = ({
                 <Button
                   ml={3}
                   variant={'primary'}
+                  {...confirmButtonProps}
                   onClick={() => {
                     onClose();
                     typeof confirmCb.current === 'function' && confirmCb.current();
@@ -73,7 +86,7 @@ export const useConfirm = ({
           </AlertDialogOverlay>
         </AlertDialog>
       ),
-      [confirmText, content, isOpen, onClose, t, title]
+      [cancelButtonProps, confirmButtonProps, confirmText, content, dialogProps, isOpen, onClose, t, title]
     )
   };
 };

@@ -1,7 +1,8 @@
 import React, { useMemo } from 'react';
 import { Box, Grid } from '@chakra-ui/react';
-import type { GridProps } from '@chakra-ui/react';
+import type { BoxProps, GridProps } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
+import type { QaProps } from '@/types/qa';
 
 // @ts-ignore
 interface Props extends GridProps {
@@ -9,9 +10,10 @@ interface Props extends GridProps {
   activeId: string;
   size?: 'sm' | 'md' | 'lg';
   onChange: (id: string) => void;
+  getItemProps?: (item: { id: string; label: string }) => BoxProps & QaProps;
 }
 
-const Tabs = ({ list, size = 'md', activeId, onChange, ...props }: Props) => {
+const Tabs = ({ list, size = 'md', activeId, onChange, getItemProps, ...props }: Props) => {
   const { t } = useTranslation();
 
   const sizeMap = useMemo(() => {
@@ -77,6 +79,7 @@ const Tabs = ({ list, size = 'md', activeId, onChange, ...props }: Props) => {
             : {
                 cursor: 'pointer'
               })}
+          {...getItemProps?.(item)}
           onClick={() => {
             if (activeId === item.id) return;
             onChange(item.id);

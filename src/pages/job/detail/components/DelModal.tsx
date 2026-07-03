@@ -47,7 +47,15 @@ const DelModal = ({
   return (
     <Modal isOpen onClose={onClose}>
       <ModalOverlay />
-      <ModalContent>
+      <ModalContent
+        data-testid="cronjob.delete.confirm-dialog"
+        data-qa-module="cronjob"
+        data-qa-object="cronjob"
+        data-qa-action="delete"
+        data-qa-risk="destructive"
+        data-qa-resource-type="cronjob"
+        data-qa-resource-id={jobName}
+      >
         <ModalHeader>{t('Delete Warning')}</ModalHeader>
         <ModalCloseButton />
         <ModalBody pb={4}>
@@ -67,10 +75,23 @@ const DelModal = ({
             value={inputValue}
             bg={'myWhite.300'}
             onChange={(e) => setInputValue(e.target.value)}
+            data-testid="cronjob.delete.name-confirm-input"
+            data-qa-module="cronjob"
+            data-qa-object="cronjob"
+            data-qa-field="name_confirmation"
+            data-qa-resource-type="cronjob"
+            data-qa-resource-id={jobName}
           />
         </ModalBody>
         <ModalFooter>
-          <Button onClick={onClose} variant={'base'}>
+          <Button
+            onClick={onClose}
+            variant={'base'}
+            data-testid="cronjob.delete.cancel-button"
+            data-qa-module="cronjob"
+            data-qa-object="cronjob"
+            data-qa-action="cancel"
+          >
             {t('Cancel')}
           </Button>
           <Button
@@ -80,6 +101,15 @@ const DelModal = ({
             isDisabled={inputValue !== jobName}
             isLoading={loading}
             onClick={handleDelApp}
+            data-testid="cronjob.delete.confirm-button"
+            data-qa-module="cronjob"
+            data-qa-object="cronjob"
+            data-qa-action="delete"
+            data-qa-risk="destructive"
+            data-qa-resource-type="cronjob"
+            data-qa-resource-id={jobName}
+            data-qa-state={loading ? 'loading' : 'ready'}
+            data-qa-disabled-reason={inputValue !== jobName ? 'name_confirmation_mismatch' : undefined}
           >
             {t('Confirm Delete')}
           </Button>

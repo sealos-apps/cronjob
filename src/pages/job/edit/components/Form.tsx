@@ -37,6 +37,8 @@ import Cron from './Cron';
 import Label from './Label';
 import EditEnvs from './EditEnvs';
 
+const getCronJobTypeQaValue = (type?: string) => (type === 'image' ? 'command' : type);
+
 const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) => {
   if (!formHook) return null;
   const { t } = useTranslation();
@@ -68,6 +70,7 @@ const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) =
   });
 
   const [activeNav, setActiveNav] = useState(navList[0].id);
+  const mode = isEdit ? 'update' : 'create';
 
   // listen scroll and set activeNav
   useEffect(() => {
@@ -112,7 +115,16 @@ const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) =
   }, []);
 
   return (
-    <Flex w="100%" h="100%" justifyContent={'center'} px="32px">
+    <Flex
+      w="100%"
+      h="100%"
+      justifyContent={'center'}
+      px="32px"
+      data-testid="cronjob.edit.form"
+      data-qa-module="cronjob"
+      data-qa-object="cronjob"
+      data-qa-action={mode}
+    >
       <Box w="220px">
         <Tabs
           list={[
@@ -120,6 +132,17 @@ const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) =
             { id: 'yaml', label: 'YAML File' }
           ]}
           activeId={'form'}
+          data-testid="cronjob.edit.mode-tabs"
+          data-qa-module="cronjob"
+          data-qa-object="editor"
+          data-qa-state="form"
+          getItemProps={(item) => ({
+            'data-testid': `cronjob.edit.${item.id}-tab`,
+            'data-qa-module': 'cronjob',
+            'data-qa-object': 'editor',
+            'data-qa-action': 'switch_tab',
+            'data-qa-state': item.id === 'form' ? 'active' : 'inactive'
+          })}
           onChange={() =>
             router.replace(
               `/job/edit?${obj2Query({
@@ -129,9 +152,26 @@ const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) =
             )
           }
         />
-        <Box mt={3} borderRadius={'sm'} overflow={'hidden'} backgroundColor={'white'}>
+        <Box
+          mt={3}
+          borderRadius={'sm'}
+          overflow={'hidden'}
+          backgroundColor={'white'}
+          data-testid="cronjob.edit.form-nav"
+          data-qa-module="cronjob"
+          data-qa-object="form_nav"
+        >
           {navList.map((item) => (
-            <Box key={item.id} onClick={() => router.replace(`#${item.id}`)}>
+            <Box
+              key={item.id}
+              onClick={() => router.replace(`#${item.id}`)}
+              data-testid="cronjob.edit.form-nav-item"
+              data-qa-module="cronjob"
+              data-qa-object="form_section"
+              data-qa-action="navigate"
+              data-qa-field={item.id}
+              data-qa-state={activeNav === item.id ? 'active' : 'inactive'}
+            >
               <Flex
                 px={5}
                 py={3}
@@ -166,8 +206,22 @@ const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) =
         height={'100%'}
         position={'relative'}
         overflowY={'scroll'}
+        data-testid="cronjob.edit.form-container"
+        data-qa-module="cronjob"
+        data-qa-object="cronjob"
+        data-qa-action={mode}
       >
-        <Box id={'baseInfo'} border="1px solid #DEE0E2" borderRadius="sm" mb="4" bg="white">
+        <Box
+          id={'baseInfo'}
+          border="1px solid #DEE0E2"
+          borderRadius="sm"
+          mb="4"
+          bg="white"
+          data-testid="cronjob.edit.basic-section"
+          data-qa-module="cronjob"
+          data-qa-object="form_section"
+          data-qa-field="basic"
+        >
           <Box
             py="4"
             pl="46px"
@@ -193,6 +247,11 @@ const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) =
                   title={isEdit ? t('Not allowed to change app name') || '' : ''}
                   autoFocus={true}
                   placeholder={t('Form.JobNamePlaceholder') || ''}
+                  data-testid="cronjob.edit.name-input"
+                  data-qa-module="cronjob"
+                  data-qa-object="cronjob"
+                  data-qa-field="name"
+                  data-qa-disabled-reason={isEdit ? 'immutable_name' : undefined}
                   {...register('jobName', {
                     validate: (value) => {
                       const result = validateJobName(value);
@@ -216,6 +275,29 @@ const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) =
                 placeholder={`${t('Type')}`}
                 value={getValues('jobType')}
                 list={CronJobTypeList}
+                data-testid="cronjob.edit.type-select"
+                data-qa-module="cronjob"
+                data-qa-object="job"
+                data-qa-field="type"
+                data-qa-state={getCronJobTypeQaValue(getValues('jobType'))}
+                data-qa-disabled-reason={isEdit ? 'immutable_type' : undefined}
+                menuListProps={{
+                  'data-testid': 'cronjob.edit.type-menu',
+                  'data-qa-module': 'cronjob',
+                  'data-qa-object': 'job',
+                  'data-qa-field': 'type'
+                }}
+                getItemProps={(item) => {
+                  const qaValue = getCronJobTypeQaValue(item.id);
+                  return {
+                    'data-testid': `cronjob.edit.type-option.${qaValue}`,
+                    'data-qa-module': 'cronjob',
+                    'data-qa-object': 'job',
+                    'data-qa-field': 'type',
+                    'data-qa-value': qaValue,
+                    'data-qa-state': getValues('jobType') === item.id ? 'selected' : 'ready'
+                  };
+                }}
                 onchange={(val: any) => {
                   setValue('jobType', val);
                   if (getValues('jobType') === 'image') {
@@ -236,6 +318,10 @@ const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) =
                   width={'300px'}
                   autoComplete="off"
                   backgroundColor={getValues('url') ? 'myWhite.500' : 'myWhite.400'}
+                  data-testid="cronjob.edit.url-input"
+                  data-qa-module="cronjob"
+                  data-qa-object="url_job"
+                  data-qa-field="url"
                   {...register('url', {
                     required: true
                   })}
@@ -264,6 +350,22 @@ const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) =
                         }
                       ]}
                       activeId={getValues('secret.use') ? 'private' : 'public'}
+                      data-testid="cronjob.edit.image-visibility-tabs"
+                      data-qa-module="cronjob"
+                      data-qa-object="image_job"
+                      data-qa-field="image_registry_visibility"
+                      data-qa-state={getValues('secret.use') ? 'private' : 'public'}
+                      getItemProps={(item) => ({
+                        'data-testid': 'cronjob.edit.image-visibility-option',
+                        'data-qa-module': 'cronjob',
+                        'data-qa-object': 'image_job',
+                        'data-qa-field': 'image_registry_visibility',
+                        'data-qa-value': item.id,
+                        'data-qa-state':
+                          (getValues('secret.use') ? 'private' : 'public') === item.id
+                            ? 'selected'
+                            : 'ready'
+                      })}
                       onChange={(val) => {
                         if (val === 'public') {
                           setValue('secret.use', false);
@@ -283,6 +385,10 @@ const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) =
                         value={getValues('imageName')}
                         backgroundColor={getValues('imageName') ? 'myWhite.500' : 'myWhite.400'}
                         placeholder={`${t('Form.Image Name')}`}
+                        data-testid="cronjob.edit.image-name-input"
+                        data-qa-module="cronjob"
+                        data-qa-object="image_job"
+                        data-qa-field="image_name"
                         {...register('imageName', {
                           required: 'Image name cannot be empty.',
                           setValueAs(e) {
@@ -302,6 +408,10 @@ const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) =
                             autoComplete="off"
                             backgroundColor={getValues('imageName') ? 'myWhite.500' : 'myWhite.400'}
                             placeholder={`${t('Username for the image registry')}`}
+                            data-testid="cronjob.edit.registry-username-input"
+                            data-qa-module="cronjob"
+                            data-qa-object="image_registry_secret"
+                            data-qa-field="username"
                             {...register('secret.username', {
                               required: t('The user name cannot be empty') || ''
                             })}
@@ -317,6 +427,10 @@ const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) =
                             type={'password'}
                             placeholder={`${t('Password for the image registry')}`}
                             backgroundColor={getValues('imageName') ? 'myWhite.500' : 'myWhite.400'}
+                            data-testid="cronjob.edit.registry-password-input"
+                            data-qa-module="cronjob"
+                            data-qa-object="image_registry_secret"
+                            data-qa-field="password"
                             {...register('secret.password', {
                               required: t('The password cannot be empty') || ''
                             })}
@@ -330,6 +444,10 @@ const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) =
                             width={'300px'}
                             backgroundColor={getValues('imageName') ? 'myWhite.500' : 'myWhite.400'}
                             placeholder={`${t('Image Address')}`}
+                            data-testid="cronjob.edit.registry-server-input"
+                            data-qa-module="cronjob"
+                            data-qa-object="image_registry_secret"
+                            data-qa-field="server_address"
                             {...register('secret.serverAddress', {
                               required: t('The image cannot be empty') || ''
                             })}
@@ -346,6 +464,10 @@ const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) =
                       width={'300px'}
                       bg={getValues('runCMD') ? 'myWhite.500' : 'myWhite.400'}
                       placeholder={`${t('example')} /bin/bash -c`}
+                      data-testid="cronjob.edit.command-input"
+                      data-qa-module="cronjob"
+                      data-qa-object="image_job"
+                      data-qa-field="command"
                       {...register('runCMD')}
                     />
                   </Box>
@@ -357,6 +479,10 @@ const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) =
                       width={'300px'}
                       bg={getValues('cmdParam') ? 'myWhite.500' : 'myWhite.400'}
                       placeholder={`${t('example')} sleep 10 && /entrypoint.sh db createdb`}
+                      data-testid="cronjob.edit.parameters-input"
+                      data-qa-module="cronjob"
+                      data-qa-object="image_job"
+                      data-qa-field="parameters"
                       {...register('cmdParam')}
                     />
                   </Box>
@@ -369,6 +495,11 @@ const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) =
                     fontSize={'base'}
                     leftIcon={<MyIcon name="edit" width={'16px'} fill={'#485264'} />}
                     onClick={onOpenEditEnvs}
+                    data-testid="cronjob.edit.envs-button"
+                    data-qa-module="cronjob"
+                    data-qa-object="environment"
+                    data-qa-action="edit"
+                    data-qa-resource-count={String(envs.length)}
                   >
                     {t('Edit Environment Variables')}
                   </Button>
@@ -382,7 +513,14 @@ const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) =
                             ? 'value from | ***'
                             : '';
                           return (
-                            <tr key={env.id}>
+                            <tr
+                              key={env.id}
+                              data-testid="cronjob.edit.env-row"
+                              data-qa-module="cronjob"
+                              data-qa-object="environment"
+                              data-qa-field={env.key}
+                              data-qa-state={env.valueFrom ? 'value_from' : 'literal'}
+                            >
                               <th>{env.key}</th>
                               <th>
                                 <MyTooltip label={valText}>
@@ -430,6 +568,29 @@ const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) =
                           width={'300px'}
                           value={getValues('launchpadId')}
                           list={launchpadApps!}
+                          data-testid="cronjob.edit.launchpad-select"
+                          data-qa-module="cronjob"
+                          data-qa-object="launchpad_job"
+                          data-qa-field="launchpad_id"
+                          data-qa-resource-type="launchpad"
+                          data-qa-resource-id={getValues('launchpadId') || undefined}
+                          data-qa-disabled-reason={isEdit ? 'immutable_source' : undefined}
+                          menuListProps={{
+                            'data-testid': 'cronjob.edit.launchpad-menu',
+                            'data-qa-module': 'cronjob',
+                            'data-qa-object': 'launchpad_job',
+                            'data-qa-field': 'launchpad_id'
+                          }}
+                          getItemProps={(item) => ({
+                            'data-testid': 'cronjob.edit.launchpad-option',
+                            'data-qa-module': 'cronjob',
+                            'data-qa-object': 'launchpad_job',
+                            'data-qa-field': 'launchpad_id',
+                            'data-qa-resource-type': 'launchpad',
+                            'data-qa-resource-id': item.id,
+                            'data-qa-state':
+                              getValues('launchpadId') === item.id ? 'selected' : 'ready'
+                          })}
                           onchange={(val: any) => {
                             const launchpad = launchpadApps?.find((item) => item.id === val);
                             if (!launchpad) return;
@@ -455,6 +616,10 @@ const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) =
                         backgroundColor={'#F4F6F8'}
                         borderRadius={'4px'}
                         onClick={() => refetch()}
+                        data-testid="cronjob.edit.refresh-launchpad-button"
+                        data-qa-module="cronjob"
+                        data-qa-object="launchpad"
+                        data-qa-action="refresh"
                       >
                         <Icon viewBox="0 0 16 16">
                           <path
@@ -489,6 +654,10 @@ const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) =
                     max={20}
                     value={getValues('replicas')}
                     onChange={(e) => setValue('replicas', parseInt(e))}
+                    data-testid="cronjob.edit.replicas-input"
+                    data-qa-module="cronjob"
+                    data-qa-object="launchpad_job"
+                    data-qa-field="replicas"
                   >
                     <NumberInputField />
                     <NumberInputStepper>
@@ -522,6 +691,19 @@ const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) =
                     <MySlider
                       markList={SliderList.cpu}
                       activeVal={getValues('cpu')}
+                      data-testid="cronjob.edit.cpu-slider"
+                      data-qa-module="cronjob"
+                      data-qa-object="launchpad_job"
+                      data-qa-field="cpu"
+                      data-qa-value={String(getValues('cpu'))}
+                      getMarkProps={(item) => ({
+                        'data-testid': 'cronjob.edit.cpu-option',
+                        'data-qa-module': 'cronjob',
+                        'data-qa-object': 'launchpad_job',
+                        'data-qa-field': 'cpu',
+                        'data-qa-value': String(item.value),
+                        'data-qa-state': getValues('cpu') === item.value ? 'selected' : 'ready'
+                      })}
                       setVal={(e) => {
                         setValue('cpu', SliderList.cpu[e].value);
                       }}
@@ -540,6 +722,19 @@ const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) =
                     <MySlider
                       markList={SliderList.memory}
                       activeVal={getValues('memory')}
+                      data-testid="cronjob.edit.memory-slider"
+                      data-qa-module="cronjob"
+                      data-qa-object="launchpad_job"
+                      data-qa-field="memory"
+                      data-qa-value={String(getValues('memory'))}
+                      getMarkProps={(item) => ({
+                        'data-testid': 'cronjob.edit.memory-option',
+                        'data-qa-module': 'cronjob',
+                        'data-qa-object': 'launchpad_job',
+                        'data-qa-field': 'memory',
+                        'data-qa-value': String(item.value),
+                        'data-qa-state': getValues('memory') === item.value ? 'selected' : 'ready'
+                      })}
                       setVal={(e) => {
                         setValue('memory', SliderList.memory[e].value);
                       }}

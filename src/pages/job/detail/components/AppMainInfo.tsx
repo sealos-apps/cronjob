@@ -37,7 +37,17 @@ export default function AppBaseInfo({
   );
 
   return (
-    <Flex flexDirection={'column'} h="0" flex={1} position={'relative'}>
+    <Flex
+      flexDirection={'column'}
+      h="0"
+      flex={1}
+      position={'relative'}
+      data-testid="cronjob.detail.history"
+      data-qa-module="cronjob"
+      data-qa-object="job_history"
+      data-qa-state={isLoading ? 'loading' : 'ready'}
+      data-qa-resource-count={String(joblist?.history?.length || 0)}
+    >
       <Flex
         alignItems={'center'}
         p={'18px 32px'}
@@ -53,10 +63,26 @@ export default function AppBaseInfo({
           </Icon>
           <Text ml="12px">{t('Historical Mission')}</Text>
         </Flex>
-        <Text>{joblist?.total}</Text>
+        <Text
+          data-testid="cronjob.detail.history-count"
+          data-qa-module="cronjob"
+          data-qa-object="job_history"
+          data-qa-field="total"
+        >
+          {joblist?.total}
+        </Text>
       </Flex>
       <Flex flex={1} overflow={'hidden'}>
-        <Box flex={'0 0 300px'} overflowY={'auto'} borderRight={'1px solid #EFF0F1'} pt="14px">
+        <Box
+          flex={'0 0 300px'}
+          overflowY={'auto'}
+          borderRight={'1px solid #EFF0F1'}
+          pt="14px"
+          data-testid="cronjob.detail.history-list"
+          data-qa-module="cronjob"
+          data-qa-object="job_history"
+          data-qa-state={joblist?.history?.length ? 'ready' : 'empty'}
+        >
           {joblist?.history?.map((jobItem, i) => (
             <Box
               cursor={'pointer'}
@@ -64,6 +90,13 @@ export default function AppBaseInfo({
               backgroundColor={i === active ? '#EBF7FD' : ''}
               key={jobItem.uid}
               onClick={() => setActive(i)}
+              data-testid="cronjob.detail.history-item"
+              data-qa-module="cronjob"
+              data-qa-object="job"
+              data-qa-resource-type="job"
+              data-qa-resource-id={jobItem.uid || jobItem.name}
+              data-qa-state={jobItem.status}
+              data-qa-selected={i === active ? 'true' : 'false'}
             >
               <Box
                 py="10px"
@@ -113,7 +146,16 @@ export default function AppBaseInfo({
                 <Box color={'blackAlpha.700'}>
                   {jobItem?.events?.map((event) => {
                     return (
-                      <Box key={event.id}>
+                      <Box
+                        key={event.id}
+                        data-testid="cronjob.detail.history-event"
+                        data-qa-module="cronjob"
+                        data-qa-object="event"
+                        data-qa-resource-type="event"
+                        data-qa-resource-id={event.id}
+                        data-qa-state={event.type}
+                        data-qa-reason={event.reason}
+                      >
                         {event.reason},{event.message}
                       </Box>
                     );
@@ -132,11 +174,26 @@ export default function AppBaseInfo({
             overflowX="hidden"
             py="24px"
             px="28px"
+            data-testid="cronjob.detail.log-panel"
+            data-qa-module="cronjob"
+            data-qa-object="pod_log"
+            data-qa-state={ActivePod.status}
+            data-qa-resource-type="pod"
+            data-qa-resource-id={ActivePod.podName}
           >
             <Text>
               {t('Log')} (pod: {ActivePod?.podName})
             </Text>
-            <Text mt="12px">{logs}</Text>
+            <Text
+              mt="12px"
+              data-testid="cronjob.detail.log-content"
+              data-qa-module="cronjob"
+              data-qa-object="pod_log"
+              data-qa-resource-type="pod"
+              data-qa-resource-id={ActivePod.podName}
+            >
+              {logs}
+            </Text>
           </Flex>
         ) : (
           <Flex
@@ -146,6 +203,10 @@ export default function AppBaseInfo({
             justifyContent={'center'}
             flexDirection={'column'}
             h={'100%'}
+            data-testid="cronjob.detail.log-empty-state"
+            data-qa-module="cronjob"
+            data-qa-object="pod_log"
+            data-qa-state={isLoading ? 'loading' : 'empty'}
           >
             <MyIcon name="noEvents" w={'48px'} h={'48px'} color={'transparent'} />
           </Flex>

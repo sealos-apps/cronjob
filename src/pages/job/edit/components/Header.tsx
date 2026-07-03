@@ -14,13 +14,17 @@ const Header = ({
   title,
   yamlList,
   applyCb,
-  applyBtnText
+  applyBtnText,
+  mode,
+  loading
 }: {
   name: string;
   title: string;
   yamlList: YamlItemType[];
   applyCb: () => void;
   applyBtnText: string;
+  mode: 'create' | 'update';
+  loading: boolean;
 }) => {
   const { t } = useTranslation();
   const router = useRouter();
@@ -41,7 +45,15 @@ const Header = ({
 
   return (
     <Flex w={'100%'} px={10} h={'86px'} alignItems={'center'}>
-      <Flex alignItems={'center'} cursor={'pointer'} onClick={() => router.replace(lastRoute)}>
+      <Flex
+        alignItems={'center'}
+        cursor={'pointer'}
+        onClick={() => router.replace(lastRoute)}
+        data-testid="cronjob.edit.back-button"
+        data-qa-module="cronjob"
+        data-qa-object="cronjob"
+        data-qa-action="back"
+      >
         <MyIcon name="arrowLeft" />
         <Box ml={6} fontWeight={'bold'} color={'black'} fontSize={'3xl'}>
           {t(title)}
@@ -56,10 +68,29 @@ const Header = ({
         borderColor={'myGray.200'}
         variant={'base'}
         onClick={handleExportYaml}
+        data-testid="cronjob.edit.export-yaml-button"
+        data-qa-module="cronjob"
+        data-qa-object="yaml"
+        data-qa-action="export"
+        data-qa-resource-type="cronjob"
+        data-qa-resource-id={name || undefined}
       >
         {t('Export')} Yaml
       </Button>
-      <Button flex={'0 0 140px'} h={'40px'} variant={'primary'} onClick={applyCb}>
+      <Button
+        flex={'0 0 140px'}
+        h={'40px'}
+        variant={'primary'}
+        onClick={applyCb}
+        data-testid={`cronjob.${mode}.submit-button`}
+        data-qa-module="cronjob"
+        data-qa-object="cronjob"
+        data-qa-action={mode}
+        data-qa-risk="resource_mutation"
+        data-qa-state={loading ? 'loading' : 'ready'}
+        data-qa-resource-type="cronjob"
+        data-qa-resource-id={name || undefined}
+      >
         {t(applyBtnText)}
       </Button>
     </Flex>

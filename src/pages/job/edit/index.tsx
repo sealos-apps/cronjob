@@ -39,10 +39,35 @@ const EditApp = ({ jobName, tabType }: { jobName?: string; tabType?: 'form' | 'y
   const { loadJobDetail } = useJobStore();
   const { title, applyBtnText, applyMessage, applySuccess, applyError } = editModeMap(!!jobName);
   const isEdit = useMemo(() => !!jobName, [jobName]);
+  const qaMode = isEdit ? 'update' : 'create';
   const config = useClientAppConfig();
 
   const { openConfirm, ConfirmChild } = useConfirm({
-    content: t(applyMessage)
+    content: t(applyMessage),
+    dialogProps: {
+      'data-testid': `cronjob.${qaMode}.confirm-dialog`,
+      'data-qa-module': 'cronjob',
+      'data-qa-object': 'cronjob',
+      'data-qa-action': qaMode,
+      'data-qa-risk': 'resource_mutation',
+      'data-qa-resource-type': 'cronjob',
+      'data-qa-resource-id': jobName || undefined
+    },
+    cancelButtonProps: {
+      'data-testid': `cronjob.${qaMode}.cancel-button`,
+      'data-qa-module': 'cronjob',
+      'data-qa-object': 'cronjob',
+      'data-qa-action': 'cancel'
+    },
+    confirmButtonProps: {
+      'data-testid': `cronjob.${qaMode}.confirm-button`,
+      'data-qa-module': 'cronjob',
+      'data-qa-object': 'cronjob',
+      'data-qa-action': qaMode,
+      'data-qa-risk': 'resource_mutation',
+      'data-qa-resource-type': 'cronjob',
+      'data-qa-resource-id': jobName || undefined
+    }
   });
 
   // compute container width
@@ -187,6 +212,13 @@ const EditApp = ({ jobName, tabType }: { jobName?: string; tabType?: 'form' | 'y
         alignItems={'center'}
         h={'100%'}
         bg={'#F3F4F5'}
+        data-testid="cronjob.edit.page"
+        data-qa-module="cronjob"
+        data-qa-object="cronjob"
+        data-qa-action={qaMode}
+        data-qa-state={loading ? 'loading' : 'ready'}
+        data-qa-resource-type="cronjob"
+        data-qa-resource-id={jobName || formHook.getValues('jobName') || undefined}
       >
         <Header
           name={formHook.getValues('jobName')}
@@ -194,6 +226,8 @@ const EditApp = ({ jobName, tabType }: { jobName?: string; tabType?: 'form' | 'y
           yamlList={yamlList}
           applyBtnText={applyBtnText}
           applyCb={handleSubmit}
+          mode={qaMode}
+          loading={loading}
         />
 
         <Box flex={'1 0 0'} h={0} w={'100%'} pb={4}>

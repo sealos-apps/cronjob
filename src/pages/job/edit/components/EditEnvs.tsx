@@ -69,7 +69,17 @@ const EditEnvs = ({
   return (
     <Modal isOpen onClose={onClose} lockFocusAcrossFrames={false}>
       <ModalOverlay />
-      <ModalContent maxH={'90vh'} maxW={'90vw'} minW={'530px'} w={'auto'}>
+      <ModalContent
+        maxH={'90vh'}
+        maxW={'90vw'}
+        minW={'530px'}
+        w={'auto'}
+        data-testid="cronjob.edit.envs-dialog"
+        data-qa-module="cronjob"
+        data-qa-object="environment"
+        data-qa-action="edit"
+        data-qa-resource-count={String(defaultEnv.length)}
+      >
         <ModalHeader>{t('Edit Environment Variables')}</ModalHeader>
         <ModalCloseButton />
         <ModalBody>
@@ -85,10 +95,22 @@ const EditEnvs = ({
             overflowX={'auto'}
             whiteSpace={inputVal === '' ? 'pre-wrap' : 'nowrap'}
             onChange={(e) => setInputVal(e.target.value)}
+            data-testid="cronjob.edit.envs-textarea"
+            data-qa-module="cronjob"
+            data-qa-object="environment"
+            data-qa-field="envs"
+            data-qa-resource-count={String(defaultEnv.length)}
           />
         </ModalBody>
         <ModalFooter>
-          <Button w={'88px'} onClick={onSubmit}>
+          <Button
+            w={'88px'}
+            onClick={onSubmit}
+            data-testid="cronjob.edit.envs-confirm-button"
+            data-qa-module="cronjob"
+            data-qa-object="environment"
+            data-qa-action="confirm"
+          >
             {t('Confirm')}
           </Button>
         </ModalFooter>

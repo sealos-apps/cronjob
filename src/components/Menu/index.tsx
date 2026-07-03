@@ -1,17 +1,21 @@
 import React from 'react';
 import { Menu, MenuList, MenuItem } from '@chakra-ui/react';
+import type { MenuItemProps, MenuListProps } from '@chakra-ui/react';
+import type { QaProps } from '@/types/qa';
 
 interface Props {
   width: number;
   Button: React.ReactNode;
+  menuListProps?: MenuListProps & QaProps;
   menuList: {
     isActive?: boolean;
     child: React.ReactNode;
     onClick: () => void;
+    itemProps?: MenuItemProps & QaProps;
   }[];
 }
 
-const MyMenu = ({ width, Button, menuList }: Props) => {
+const MyMenu = ({ width, Button, menuList, menuListProps }: Props) => {
   const menuItemStyles = {
     borderRadius: 'sm',
     py: 2,
@@ -31,11 +35,13 @@ const MyMenu = ({ width, Button, menuList }: Props) => {
         p={'6px'}
         border={'1px solid #fff'}
         boxShadow={'0px 2px 4px rgba(161, 167, 179, 0.25), 0px 0px 1px rgba(121, 141, 159, 0.25);'}
+        {...menuListProps}
       >
         {menuList.map((item, i) => (
           <MenuItem
             key={i}
             {...menuItemStyles}
+            {...item.itemProps}
             onClick={item.onClick}
             color={item.isActive ? 'hover.blue' : ''}
           >
