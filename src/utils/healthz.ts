@@ -5,3 +5,9 @@ export const healthzResponse = {
   service: 'cronjob',
   status: 'ok'
 } as const;
+
+export const healthzConfigMissingResponse = {
+  service: 'cronjob',
+  status: 'error',
+  reason: 'config_not_loaded'
+} as const;

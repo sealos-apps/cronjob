@@ -77,4 +77,4 @@
 
 ## Health Check
 
-The web service exposes `/healthz` for Kubernetes startup, liveness, and readiness probes. It returns `200` with `{"service":"cronjob","status":"ok"}` plus `Cache-Control: no-store`.
+The web service exposes `/healthz` for Kubernetes startup, liveness, and readiness probes. It returns `200` with `{"service":"cronjob","status":"ok"}` plus `Cache-Control: no-store` after the app config is loaded. If the server config is not initialized, it returns `500` with `{"service":"cronjob","status":"error","reason":"config_not_loaded"}`.
