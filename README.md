@@ -77,4 +77,4 @@
 
 ## Health Check
 
-The web service exposes `/healthz` for Kubernetes startup, liveness, and readiness probes. It rewrites to `/api/healthz` and returns `200` with `{"service":"cronjob","status":"ok"}` plus `Cache-Control: no-store`. The legacy `/api/health` endpoint is kept as a compatibility alias for the same handler.
+The web service exposes `/healthz` for Kubernetes startup, liveness, and readiness probes. It returns `200` with `{"service":"cronjob","status":"ok"}` plus `Cache-Control: no-store`. The legacy `/api/health` endpoint is kept as a compatibility alias.

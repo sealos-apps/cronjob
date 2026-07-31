@@ -1,5 +1,4 @@
 import healthHandler from '@/pages/api/health';
-import healthzHandler from '@/pages/api/healthz';
 import { getServerSideProps } from '@/pages/healthz';
 
 function createResponse() {
@@ -21,13 +20,10 @@ function createPageResponse() {
 }
 
 describe('health handlers', () => {
-  it.each([
-    ['healthz', healthzHandler],
-    ['health', healthHandler]
-  ])('returns the stable health contract from %s', (_name, handler) => {
+  it('keeps the legacy API health endpoint compatible', () => {
     const res = createResponse();
 
-    handler({} as any, res as any);
+    healthHandler({} as any, res as any);
 
     expect(res.setHeader).toHaveBeenCalledWith('Cache-Control', 'no-store');
     expect(res.status).toHaveBeenCalledWith(200);

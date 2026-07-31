@@ -25,14 +25,6 @@ const nextConfig = {
   experimental: {
     outputFileTracingRoot: path.join(__dirname),
     instrumentationHook: true
-  },
-  async rewrites() {
-    return [
-      {
-        source: '/healthz',
-        destination: '/api/healthz'
-      }
-    ];
   }
 };
 
