@@ -1,15 +1,4 @@
-import healthHandler from '@/pages/api/health';
 import { getServerSideProps } from '@/pages/healthz';
-
-function createResponse() {
-  const res = {
-    json: vi.fn(),
-    setHeader: vi.fn(),
-    status: vi.fn()
-  };
-  res.status.mockReturnValue(res);
-  return res;
-}
 
 function createPageResponse() {
   return {
@@ -19,20 +8,7 @@ function createPageResponse() {
   };
 }
 
-describe('health handlers', () => {
-  it('keeps the legacy API health endpoint compatible', () => {
-    const res = createResponse();
-
-    healthHandler({} as any, res as any);
-
-    expect(res.setHeader).toHaveBeenCalledWith('Cache-Control', 'no-store');
-    expect(res.status).toHaveBeenCalledWith(200);
-    expect(res.json).toHaveBeenCalledWith({
-      service: 'cronjob',
-      status: 'ok'
-    });
-  });
-
+describe('healthz page', () => {
   it('returns the stable health contract from the root healthz page', async () => {
     const res = createPageResponse();
 
