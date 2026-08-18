@@ -1,0 +1,409 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+  packages: write
+
+env:
+  GHCR_RUNTIME_IMAGE: ghcr.io/${{ github.repository }}/cronjob
+  GHCR_SEALOS_IMAGE: ghcr.io/${{ github.repository }}/cronjob-cluster
+
+jobs:
+  prepare:
+    runs-on: namespace-profile-sealos-apps-amd64
+    outputs:
+      release_tag: ${{ steps.vars.outputs.release_tag }}
+      short_sha: ${{ steps.vars.outputs.short_sha }}
+      is_prerelease: ${{ steps.vars.outputs.is_prerelease }}
+      oss_prefix: ${{ steps.vars.outputs.oss_prefix }}
+      oss_region: ${{ steps.vars.outputs.oss_region }}
+    steps:
+      - name: Checkout release tag
+        uses: actions/checkout@v4
+        with:
+          ref: refs/tags/${{ github.ref_name }}
+          fetch-depth: 1
+
+      - name: Prepare release variables
+        id: vars
+        env:
+          OSS_ENDPOINT: ${{ secrets.OSS_ENDPOINT }}
+          OSS_REGION_INPUT: ${{ vars.OSS_REGION }}
+        run: |
+          RELEASE_TAG="${{ github.ref_name }}"
+          SHORT_SHA="$(git rev-parse --short=7 HEAD)"
+          echo "release_tag=${RELEASE_TAG}" >> "$GITHUB_OUTPUT"
+          echo "short_sha=${SHORT_SHA}" >> "$GITHUB_OUTPUT"
+          echo "oss_prefix=releases/${RELEASE_TAG}" >> "$GITHUB_OUTPUT"
+          if [[ "${RELEASE_TAG}" == *-* ]]; then
+            echo "is_prerelease=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "is_prerelease=false" >> "$GITHUB_OUTPUT"
+          fi
+
+          if [ -n "${OSS_REGION_INPUT}" ]; then
+            OSS_REGION="${OSS_REGION_INPUT}"
+          else
+            OSS_HOST="${OSS_ENDPOINT#http://}"
+            OSS_HOST="${OSS_HOST#https://}"
+            OSS_HOST="${OSS_HOST%%/*}"
+            if [[ "$OSS_HOST" =~ ^oss-([a-z0-9-]+)(-internal)?\.aliyuncs\.com$ ]]; then
+              OSS_REGION="${BASH_REMATCH[1]}"
+            else
+              echo "failed to infer OSS region from OSS_ENDPOINT=${OSS_ENDPOINT}" >&2
+              exit 1
+            fi
+          fi
+
+          echo "oss_region=${OSS_REGION}" >> "$GITHUB_OUTPUT"
+
+  runtime-build:
+    name: Build Runtime Image (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    needs: [prepare]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            platform: linux/amd64
+            runner: namespace-profile-sealos-apps-amd64
+          - arch: arm64
+            platform: linux/arm64
+            runner: namespace-profile-sealos-apps-arm64
+    steps:
+      - name: Checkout release tag
+        uses: actions/checkout@v4
+        with:
+          ref: refs/tags/${{ needs.prepare.outputs.release_tag }}
+          fetch-depth: 1
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push runtime image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          cache-from: type=gha,scope=runtime-${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=runtime-${{ matrix.arch }}
+          platforms: ${{ matrix.platform }}
+          tags: |
+            ${{ env.GHCR_RUNTIME_IMAGE }}:${{ needs.prepare.outputs.release_tag }}-${{ matrix.arch }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ needs.prepare.outputs.release_tag }}
+            org.opencontainers.image.architecture=${{ matrix.arch }}
+            runnumber=${{ github.run_id }}
+
+  runtime-manifest:
+    name: Publish Runtime Manifest
+    runs-on: namespace-profile-sealos-apps-amd64
+    needs: [prepare, runtime-build]
+    steps:
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create release manifest
+        run: |
+          set -euo pipefail
+          RELEASE_TAG="${{ needs.prepare.outputs.release_tag }}"
+          docker buildx imagetools create \
+            --tag "${GHCR_RUNTIME_IMAGE}:${RELEASE_TAG}" \
+            "${GHCR_RUNTIME_IMAGE}:${RELEASE_TAG}-amd64" \
+            "${GHCR_RUNTIME_IMAGE}:${RELEASE_TAG}-arm64"
+
+      - name: Update latest tag
+        if: ${{ needs.prepare.outputs.is_prerelease == 'false' }}
+        run: |
+          set -euo pipefail
+          RELEASE_TAG="${{ needs.prepare.outputs.release_tag }}"
+          docker buildx imagetools create \
+            --tag "${GHCR_RUNTIME_IMAGE}:latest-amd64" \
+            "${GHCR_RUNTIME_IMAGE}:${RELEASE_TAG}-amd64"
+          docker buildx imagetools create \
+            --tag "${GHCR_RUNTIME_IMAGE}:latest-arm64" \
+            "${GHCR_RUNTIME_IMAGE}:${RELEASE_TAG}-arm64"
+          docker buildx imagetools create \
+            --tag "${GHCR_RUNTIME_IMAGE}:latest" \
+            "${GHCR_RUNTIME_IMAGE}:${RELEASE_TAG}-amd64" \
+            "${GHCR_RUNTIME_IMAGE}:${RELEASE_TAG}-arm64"
+
+  cluster-build:
+    name: Build Cluster Image (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    needs: [prepare, runtime-manifest]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            platform: linux/amd64
+            runner: namespace-profile-sealos-apps-amd64
+          - arch: arm64
+            platform: linux/arm64
+            runner: namespace-profile-sealos-apps-arm64
+    steps:
+      - name: Checkout release tag
+        uses: actions/checkout@v4
+        with:
+          ref: refs/tags/${{ needs.prepare.outputs.release_tag }}
+          fetch-depth: 1
+
+      - name: Install cache image tools
+        run: |
+          sudo bash ./.github/scripts/install.sh
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Cache images
+        working-directory: deploy
+        run: |
+          set -euo pipefail
+          RELEASE_TAG="${{ needs.prepare.outputs.release_tag }}"
+          RUNTIME_IMAGE="${GHCR_RUNTIME_IMAGE}:${RELEASE_TAG}"
+
+          sed -i -E "s#^image:.*#image: ${RUNTIME_IMAGE}#g" charts/cronjob/values.yaml
+          if [ -s images/shim/imagelist ]; then
+            mapfile -t SHIM_IMAGES < <(sed -e 's/[[:space:]]*#.*$//' -e '/^[[:space:]]*$/d' images/shim/imagelist)
+            if [ "${#SHIM_IMAGES[@]}" -gt 0 ]; then
+              SHIM_IMAGE_LIST="$(IFS=,; echo "${SHIM_IMAGES[*]}")"
+              sudo sealos registry save --registry-dir=registry_${{ matrix.arch }} --arch ${{ matrix.arch }} --images="${SHIM_IMAGE_LIST}"
+            fi
+          fi
+
+          sudo sealos login -u "${{ github.actor }}" -p "${{ secrets.GITHUB_TOKEN }}" ghcr.io
+          sudo sealos registry save --registry-dir=registry_${{ matrix.arch }} --arch ${{ matrix.arch }} --images="${RUNTIME_IMAGE}"
+
+      - name: Build and push cluster image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./deploy
+          file: ./deploy/Kubefile
+          push: true
+          build-args: |
+            TARGETARCH=${{ matrix.arch }}
+          cache-from: type=gha,scope=sealos-${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=sealos-${{ matrix.arch }}
+          platforms: ${{ matrix.platform }}
+          tags: |
+            ${{ env.GHCR_SEALOS_IMAGE }}:${{ needs.prepare.outputs.release_tag }}-${{ matrix.arch }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ needs.prepare.outputs.release_tag }}
+            org.opencontainers.image.architecture=${{ matrix.arch }}
+            runnumber=${{ github.run_id }}
+
+  cluster-manifest:
+    name: Publish Cluster Manifest
+    runs-on: namespace-profile-sealos-apps-amd64
+    needs: [prepare, cluster-build]
+    steps:
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create release manifest
+        run: |
+          set -euo pipefail
+          RELEASE_TAG="${{ needs.prepare.outputs.release_tag }}"
+          docker buildx imagetools create \
+            --tag "${GHCR_SEALOS_IMAGE}:${RELEASE_TAG}" \
+            "${GHCR_SEALOS_IMAGE}:${RELEASE_TAG}-amd64" \
+            "${GHCR_SEALOS_IMAGE}:${RELEASE_TAG}-arm64"
+
+      - name: Update latest tag
+        if: ${{ needs.prepare.outputs.is_prerelease == 'false' }}
+        run: |
+          set -euo pipefail
+          RELEASE_TAG="${{ needs.prepare.outputs.release_tag }}"
+          docker buildx imagetools create \
+            --tag "${GHCR_SEALOS_IMAGE}:latest-amd64" \
+            "${GHCR_SEALOS_IMAGE}:${RELEASE_TAG}-amd64"
+          docker buildx imagetools create \
+            --tag "${GHCR_SEALOS_IMAGE}:latest-arm64" \
+            "${GHCR_SEALOS_IMAGE}:${RELEASE_TAG}-arm64"
+          docker buildx imagetools create \
+            --tag "${GHCR_SEALOS_IMAGE}:latest" \
+            "${GHCR_SEALOS_IMAGE}:${RELEASE_TAG}-amd64" \
+            "${GHCR_SEALOS_IMAGE}:${RELEASE_TAG}-arm64"
+
+  ensure-github-release:
+    needs: [prepare, runtime-manifest, cluster-manifest]
+    runs-on: namespace-profile-sealos-apps-amd64
+    steps:
+      - name: Create or reuse GitHub release
+        uses: actions/github-script@v7
+        env:
+          RELEASE_TAG: ${{ needs.prepare.outputs.release_tag }}
+        with:
+          script: |
+            const tag = process.env.RELEASE_TAG;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const prerelease = tag.includes("-");
+
+            try {
+              await github.rest.repos.getReleaseByTag({
+                owner,
+                repo,
+                tag,
+              });
+              core.info(`Release ${tag} already exists; reusing it.`);
+            } catch (error) {
+              if (error.status !== 404) {
+                throw error;
+              }
+
+              await github.rest.repos.createRelease({
+                owner,
+                repo,
+                tag_name: tag,
+                name: tag,
+                prerelease,
+                generate_release_notes: true,
+              });
+              core.info(`Created release ${tag}.`);
+            }
+
+  package-release-tar:
+    name: Package Release Tar (${{ matrix.arch }})
+    runs-on: namespace-profile-sealos-apps-amd64
+    needs: [prepare, ensure-github-release]
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [amd64, arm64]
+    steps:
+      - name: Checkout release tag
+        uses: actions/checkout@v4
+        with:
+          ref: refs/tags/${{ needs.prepare.outputs.release_tag }}
+          fetch-depth: 1
+
+      - name: Install cache image tools
+        run: |
+          sudo bash ./.github/scripts/install.sh
+
+      - name: Cache and repackage offline tar
+        run: |
+          set -euo pipefail
+          sudo mkdir -p /root/.config/containers
+          tokenB64="$(printf "%s" "${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}" | base64 | tr -d '\n')"
+          cat <<EOF | sudo tee /root/.config/containers/auth.json > /dev/null
+          {
+            "auths": {
+              "ghcr.io": {
+                "auth": "${tokenB64}"
+              }
+            }
+          }
+          EOF
+          ARCH="${{ matrix.arch }}"
+          RELEASE_TAG="${{ needs.prepare.outputs.release_tag }}"
+          TAR_NAME="cronjob-cluster-${RELEASE_TAG}-${ARCH}.tar"
+          IMAGE_REF="ghcr.io/${{ github.repository }}/cronjob-cluster:${RELEASE_TAG}"
+          sudo rm -f "${TAR_NAME}" "${TAR_NAME}.md5"
+          sudo rm -rf /var/lib/sealos-cronjob-containers /run/sealos-cronjob-containers
+          sudo mkdir -p /etc/containers /var/lib/sealos-cronjob-containers /run/sealos-cronjob-containers
+          cat <<EOF | sudo tee /etc/containers/storage.conf > /dev/null
+          [storage]
+          driver = "vfs"
+          runroot = "/run/sealos-cronjob-containers"
+          graphroot = "/var/lib/sealos-cronjob-containers"
+          EOF
+          sudo HOME=/root sealos pull --platform=linux/${ARCH} "${IMAGE_REF}"
+          sudo HOME=/root sealos save -o "${TAR_NAME}" "${IMAGE_REF}"
+          sudo HOME=/root sealos rmi "${IMAGE_REF}"
+          md5sum "${TAR_NAME}" > "${TAR_NAME}.md5"
+          cat "${TAR_NAME}.md5"
+
+      - name: Upload sealos package
+        uses: namespace-actions/upload-artifact@v1
+        with:
+          name: sealos-cronjob-cluster-${{ needs.prepare.outputs.release_tag }}-${{ matrix.arch }}
+          path: |
+            cronjob-cluster-${{ needs.prepare.outputs.release_tag }}-${{ matrix.arch }}.tar
+            cronjob-cluster-${{ needs.prepare.outputs.release_tag }}-${{ matrix.arch }}.tar.md5
+          if-no-files-found: error
+          retention-days: 1
+
+  sync-image-aliyun:
+    name: Sync Sealos Packages to OSS (${{ matrix.arch }})
+    runs-on: namespace-profile-sealos-apps-amd64
+    needs: [prepare, package-release-tar]
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [amd64, arm64]
+    steps:
+      - name: Download sealos package
+        uses: namespace-actions/download-artifact@v2
+        with:
+          path: release-assets
+          pattern: sealos-cronjob-cluster-${{ needs.prepare.outputs.release_tag }}-${{ matrix.arch }}
+          merge-multiple: true
+
+      - name: Install oss tools
+        run: |
+          set -euo pipefail
+          sudo -v
+          curl -fsSL https://gosspublic.alicdn.com/ossutil/install.sh | sudo bash
+
+      - name: Sync to OSS
+        run: |
+          set -euo pipefail
+          ARCH="${{ matrix.arch }}"
+          RELEASE_TAG="${{ needs.prepare.outputs.release_tag }}"
+          OSS_PREFIX="${{ needs.prepare.outputs.oss_prefix }}"
+          TAR_NAME="release-assets/cronjob-cluster-${RELEASE_TAG}-${ARCH}.tar"
+          OSS_TAR_NAME="cronjob-cluster-${RELEASE_TAG}-${ARCH}.tar"
+          ossutil64 cp -f -e "${{ secrets.OSS_ENDPOINT }}" \
+            -i "${{ secrets.OSS_ACCESS_KEY_ID }}" \
+            -k "${{ secrets.OSS_ACCESS_KEY_SECRET }}" \
+            "${TAR_NAME}" \
+            "oss://${{ vars.OSS_BUCKET }}/${OSS_PREFIX}/${OSS_TAR_NAME}"
+          ossutil64 cp -f -e "${{ secrets.OSS_ENDPOINT }}" \
+            -i "${{ secrets.OSS_ACCESS_KEY_ID }}" \
+            -k "${{ secrets.OSS_ACCESS_KEY_SECRET }}" \
+            "${TAR_NAME}.md5" \
+            "oss://${{ vars.OSS_BUCKET }}/${OSS_PREFIX}/${OSS_TAR_NAME}.md5"
