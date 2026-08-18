@@ -22,7 +22,7 @@ concurrency:
 jobs:
   meta:
     name: Release Metadata
-    runs-on: ubuntu-latest
+    runs-on: namespace-profile-sealos-apps-amd64
     permissions:
       contents: read
     outputs:
@@ -86,10 +86,10 @@ jobs:
         include:
           - arch: amd64
             platform: linux/amd64
-            runner: ubuntu-24.04
+            runner: namespace-profile-sealos-apps-amd64
           - arch: arm64
             platform: linux/arm64
-            runner: ubuntu-24.04-arm
+            runner: namespace-profile-sealos-apps-arm64
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -124,7 +124,7 @@ jobs:
 
   runtime-manifest:
     name: Publish Runtime Manifests
-    runs-on: ubuntu-latest
+    runs-on: namespace-profile-sealos-apps-amd64
     needs: [meta, runtime-build]
     permissions:
       packages: write
@@ -171,10 +171,10 @@ jobs:
         include:
           - arch: amd64
             platform: linux/amd64
-            runner: ubuntu-24.04
+            runner: namespace-profile-sealos-apps-amd64
           - arch: arm64
             platform: linux/arm64
-            runner: ubuntu-24.04-arm
+            runner: namespace-profile-sealos-apps-arm64
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -241,7 +241,7 @@ jobs:
           ls -lh "release-assets/cronjob-cluster-${IMAGE_TAG}-${{ matrix.arch }}.tar.gz"
 
       - name: Upload sealos image package
-        uses: actions/upload-artifact@v4
+        uses: namespace-actions/upload-artifact@v1
         with:
           name: sealos-image-${{ needs.meta.outputs.image_tag }}-${{ matrix.arch }}
           path: release-assets/cronjob-cluster-${{ needs.meta.outputs.image_tag }}-${{ matrix.arch }}.tar.gz
@@ -250,7 +250,7 @@ jobs:
 
   sealos-manifest:
     name: Publish Sealos Manifests
-    runs-on: ubuntu-latest
+    runs-on: namespace-profile-sealos-apps-amd64
     needs: [meta, sealos-build]
     permissions:
       packages: write
@@ -287,7 +287,7 @@ jobs:
 
   sync-image-aliyun:
     name: Sync Sealos Packages to OSS (${{ matrix.arch }})
-    runs-on: ubuntu-latest
+    runs-on: namespace-profile-sealos-apps-amd64
     needs: [meta, sealos-manifest]
     permissions:
       contents: read
@@ -314,7 +314,7 @@ jobs:
 
       - name: Download sealos package
         if: ${{ steps.oss-credentials.outputs.enabled == 'true' }}
-        uses: actions/download-artifact@v4
+        uses: namespace-actions/download-artifact@v2
         with:
           path: release-assets
           pattern: sealos-image-${{ needs.meta.outputs.image_tag }}-${{ matrix.arch }}
