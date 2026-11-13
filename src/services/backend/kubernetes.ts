@@ -1,3 +1,4 @@
+import { createInlineKubeConfig } from './kubeconfig';
 import * as k8s from '@kubernetes/client-node';
 import * as yaml from 'js-yaml';
 
@@ -17,29 +18,33 @@ export function CheckIsInCluster(): [boolean, string] {
 }
 
 /* init api */
-export function K8sApi(config = ''): k8s.KubeConfig {
-  const kc = new k8s.KubeConfig();
-  config ? kc.loadFromString(config) : kc.loadFromCluster();
+// Endpoint and CA always come from the runtime environment, never from the caller's kubeconfig.
+function getTrustedCluster(): k8s.Cluster | undefined {
+  const [inCluster, hosts] = CheckIsInCluster();
 
-  const cluster = kc.getCurrentCluster();
-
-  if (cluster && process.env.NODE_ENV !== 'development') {
-    const [inCluster, hosts] = CheckIsInCluster();
-    const server = {
-      name: cluster.name,
-      caData: cluster.caData,
-      caFile: cluster.caFile,
-      server: inCluster && hosts ? hosts : 'https://apiserver.cluster.local:6443',
-      skipTLSVerify: cluster.skipTLSVerify
-    };
-    kc.clusters.forEach((item, i) => {
-      if (item.name === cluster.name) {
-        kc.clusters[i] = server;
-      }
-    });
+  if (inCluster && hosts) {
+    const clusterConfig = new k8s.KubeConfig();
+    clusterConfig.loadFromCluster();
+    const cluster = clusterConfig.getCurrentCluster();
+    if (cluster) {
+      return { ...cluster, server: hosts, skipTLSVerify: false };
+    }
   }
 
-  return kc;
+  const defaults = new k8s.KubeConfig();
+  defaults.loadFromDefault();
+  const cluster = defaults.getCurrentCluster();
+  return cluster ? { ...cluster, skipTLSVerify: false } : undefined;
+}
+
+export function K8sApi(config = ''): k8s.KubeConfig {
+  if (!config) {
+    const kc = new k8s.KubeConfig();
+    kc.loadFromCluster();
+    return kc;
+  }
+
+  return createInlineKubeConfig(config, getTrustedCluster());
 }
 
 export type CRDMeta = {
